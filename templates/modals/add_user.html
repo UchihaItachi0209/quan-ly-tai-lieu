@@ -1,0 +1,51 @@
+<div id="add-user-modal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50">
+    <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg transform scale-95">
+         <form method="POST" action="{{ url_for('add_user') }}" class="p-0">
+            <div class="flex justify-between items-center p-4 bg-teal-600 text-white rounded-t-lg">
+                <h2 class="text-xl font-bold">Thêm người dùng</h2>
+                <button type="button" data-action="close-modal" class="p-1 rounded-full hover:bg-teal-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-8">
+                <div class="mb-5">
+                    <label class="block mb-2 text-base font-semibold text-slate-700">Họ tên</label>
+                    <input type="text" name="full_name" required 
+                           class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div class="mb-5">
+                    <label class="block mb-2 text-base font-semibold text-slate-700">Chức vụ</label>
+                    <input type="text" name="position" required 
+                           class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div class="mb-5">
+                    <label class="block mb-2 text-base font-semibold text-slate-700">Tài khoản</label>
+                    <input type="text" name="username" required 
+                           class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div class="mb-5">
+                    <label class="block mb-2 text-base font-semibold text-slate-700">Mật khẩu</label>
+                    <input type="password" name="password" required 
+                           class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div class="mb-5">
+                    <label class="block mb-2 text-base font-semibold text-slate-700">Xác nhận mật khẩu</label>
+                    <input type="password" name="confirm_password" required 
+                           class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    <p id="add-password-mismatch-message" class="text-sm text-red-500 mt-2 hidden">Mật khẩu và xác nhận mật khẩu không khớp.</p>
+                </div>
+                <div class="mb-5">
+                    <label class="block mb-2 text-base font-semibold text-slate-700">Vai trò</label>
+                    <select name="role" class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                        <option value="user">Người dùng</option>
+                        <option value="admin">Quản trị viên</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg">
+                <button type="button" data-action="close-modal" class="inline-flex items-center justify-center px-4 py-2 text-base font-medium rounded-md shadow-sm transition-colors text-slate-700 bg-white hover:bg-slate-100 border">Hủy</button>
+                <button type="submit" class="inline-flex items-center justify-center px-4 py-2 text-base font-medium rounded-md shadow-sm transition-colors text-white bg-slate-800 hover:bg-slate-900">Thêm mới</button>
+            </div>
+         </form>
+    </div>
+</div>

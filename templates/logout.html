@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} - Document Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-link { @apply flex items-center gap-3 rounded-lg px-3 py-2 text-slate-500 transition-all hover:text-slate-900; }
+        .sidebar-link.active { @apply bg-slate-200 text-slate-900; }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="h-full">
+<div class="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+    <div class="hidden border-r bg-white md:block">
+        <div class="flex h-full max-h-screen flex-col gap-2">
+            <div class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+                <a href="/" class="flex items-center gap-2 font-semibold text-sky-600">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Document Hub</span>
+                </a>
+            </div>
+            <div class="flex-1">
+                <nav class="grid items-start px-2 text-sm font-medium lg:px-4">
+                    <a href="{{ url_for('dashboard') }}" class="sidebar-link active">
+                        <i data-lucide="home" class="h-4 w-4"></i> Dashboard
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-col">
+        <header class="flex h-14 items-center gap-4 border-b bg-white px-4 lg:h-[60px] lg:px-6">
+            <div class="w-full flex-1"></div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <p class="font-medium text-sm">{{ current_user.user_name }}</p>
+                    <p class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</p>
+                </div>
+                 <a href="{{ url_for('logout') }}" title="Đăng xuất" class="p-2 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors">
+                     <i data-lucide="log-out" class="w-5 h-5"></i>
+                 </a>
+            </div>
+        </header>
+        <main class="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-slate-100">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<div id="add-document-modal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50">
+    <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-2xl transform scale-95">
+         <form method="POST" action="{{ url_for('add_document') }}" enctype="multipart/form-data" class="p-0">
+            <div class="flex justify-between items-center p-6 pb-3 border-b border-slate-200">
+                <h2 class="text-2xl font-bold">Thêm Tài liệu mới</h2>
+                <button type="button" data-action="close-modal" class="p-1 rounded-full text-slate-500 hover:bg-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div><label for="title" class="block text-sm font-medium">Tiêu đề</label><input type="text" name="title" required class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"></div>
+                     <div><label for="authoring_agency" class="block text-sm font-medium">Cơ quan soạn thảo</label><input type="text" name="authoring_agency" required class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"></div>
+                     <div><label for="country" class="block text-sm font-medium">Quốc gia</label><input type="text" name="country" required class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"></div>
+                     <div><label for="creation_date" class="block text-sm font-medium">Ngày tạo</label><input type="date" name="creation_date" required class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"></div>
+                     <div><label for="source_type" class="block text-sm font-medium">Nguồn</label><select name="source_type" class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"><option>Đóng</option><option>Nội bộ</option><option>Mở</option><option>Tổng hợp</option></select></div>
+                     <div><label for="confidentiality_level" class="block text-sm font-medium">Độ mật</label><select name="confidentiality_level" class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"><option>Thường</option><option>Mật</option><option>Tối mật</option><option>Tuyệt mật</option></select></div>
+                     <div><label for="urgency_level" class="block text-sm font-medium">Độ khẩn</label><select name="urgency_level" class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"><option>Thường</option><option>Khẩn</option><option>Hỏa tốc</option><option>Thượng khẩn</option></select></div>
+                </div>
+                <div class="pt-4 mt-4 border-t border-slate-200 space-y-4">
+                    <div><label for="original_file" class="block text-sm font-medium">Tệp tài liệu gốc (.pdf, .docx, .txt)</label><input type="file" name="original_file" required class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"></div>
+                    <div><label for="translated_file" class="block text-sm font-medium">Tệp bản dịch (.txt, .docx)</label><input type="file" name="translated_file" required class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm mt-1"></div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 p-6 pt-4 border-t border-slate-200 bg-slate-50">
+                <button type="button" data-action="close-modal" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-slate-700 bg-slate-100 hover:bg-slate-200">Hủy</button>
+                <button type="submit" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-white bg-sky-600 hover:bg-sky-700">Lưu Tài liệu</button>
+            </div>
+         </form>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+    
+    // MỚI: JavaScript để điều khiển Modal
+    const addDocumentModal = document.getElementById('add-document-modal');
+    
+    // Tìm tất cả các nút có thể mở modal
+    document.querySelectorAll('[data-action="open-add-modal"]').forEach(button => {
+        button.addEventListener('click', () => {
+            addDocumentModal.classList.remove('hidden');
+            addDocumentModal.classList.add('flex');
+        });
+    });
+
+    // Tìm tất cả các nút có thể đóng modal
+    addDocumentModal.querySelectorAll('[data-action="close-modal"]').forEach(button => {
+        button.addEventListener('click', () => {
+            addDocumentModal.classList.add('hidden');
+            addDocumentModal.classList.remove('flex');
+        });
+    });
+</script>
+</body>
+</html>

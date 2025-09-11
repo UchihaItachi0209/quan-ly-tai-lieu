@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-lg border bg-white text-card-foreground shadow-sm hover:shadow-lg transition-shadow"><div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2"><h3 class="tracking-tight font-semibold">Tổng số tài liệu</h3><i data-lucide="files" class="h-5 w-5 text-slate-500"></i></div><div class="p-6 pt-0"><div class="text-3xl font-bold text-slate-900">{{ stats.total }}</div></div></div>
+    <div class="rounded-lg border bg-white text-card-foreground shadow-sm hover:shadow-lg transition-shadow"><div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2"><h3 class="tracking-tight font-semibold">Chưa xử lý</h3><i data-lucide="file-question" class="h-5 w-5 text-slate-500"></i></div><div class="p-6 pt-0"><div class="text-3xl font-bold text-red-600">{{ stats.unassigned }}</div></div></div>
+    <div class="rounded-lg border bg-white text-card-foreground shadow-sm hover:shadow-lg transition-shadow"><div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2"><h3 class="tracking-tight font-semibold">Đang xử lý</h3><i data-lucide="loader-circle" class="h-5 w-5 text-slate-500"></i></div><div class="p-6 pt-0"><div class="text-3xl font-bold text-amber-600">{{ stats.processing }}</div></div></div>
+    <div class="rounded-lg border bg-white text-card-foreground shadow-sm hover:shadow-lg transition-shadow"><div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2"><h3 class="tracking-tight font-semibold">Đã xử lý</h3><i data-lucide="check-circle" class="h-5 w-5 text-slate-500"></i></div><div class="p-6 pt-0"><div class="text-3xl font-bold text-green-600">{{ stats.completed }}</div></div></div>
+</div>
+
+<div class="rounded-lg border bg-white text-card-foreground shadow-sm">
+    <div class="p-6 flex items-center justify-between">
+        <div><h3 class="tracking-tight text-xl font-semibold">Danh sách Tài liệu</h3><p class="text-sm text-slate-500">Toàn bộ tài liệu có trong hệ thống.</p></div>
+        <button data-action="open-add-modal" data-users='{{ users | tojson | forceescape }}' class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-white bg-slate-800 hover:bg-slate-900">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>Thêm mới
+        </button>
+    </div>
+    <div class="border-t"><div class="relative w-full overflow-auto">
+        <table class="w-full caption-bottom text-base">
+            <thead class="[&_tr]:border-b bg-slate-100"><tr class="border-b transition-colors">
+                <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 w-16 border-r">STT</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 border-r">Tiêu đề</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 border-r">Ngày tạo tài liệu</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 border-r">Hướng</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 border-r">Người xử lý</th>
+                <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 border-r">Trạng thái</th>
+                <th class="h-12 px-4 text-right align-middle font-semibold text-slate-600">Hành động</th>
+            </tr></thead>
+            <tbody class="[&_tr:last-child]:border-0 divide-y divide-slate-100">
+                {% for doc in documents %}
+                <tr class="odd:bg-white even:bg-slate-50/50">
+                    <td class="p-4 align-middle font-medium text-slate-600 border-r">{{ loop.index }}</td>
+                    <td class="p-4 align-middle font-medium text-slate-900 border-r">{{ doc.title }}<p class="font-normal text-sm text-slate-500">{{ doc.authoring_agency }}</p></td>
+                    <td class="p-4 align-middle text-slate-500 text-sm border-r">{{ doc.creation_date }}</td>
+                    <td class="p-4 align-middle text-slate-500 text-sm border-r">{{ doc.country }}</td>
+                    <td class="p-4 align-middle text-slate-500 text-sm border-r">{{ doc.handler_name or 'Chưa giao' }}</td>
+                    <td class="p-4 align-middle border-r">
+                        {% if doc.status == 'Đã xử lý' %}<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md bg-green-100 text-green-800">{{ doc.status }}</span>
+                        {% elif doc.status == 'Đang xử lý' %}<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md bg-amber-100 text-amber-800">{{ doc.status }}</span>
+                        {% else %}<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md bg-red-100 text-red-800">{{ doc.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4 align-middle text-right">
+                        <div class="inline-flex rounded-md shadow-sm">
+                            <a href="{{ url_for('view_document', doc_id=doc.id) }}" title="Xem chi tiết" class="px-3 py-2 text-sm font-medium text-white bg-sky-600 rounded-l-lg hover:bg-sky-700"><i data-lucide="eye" class="w-4 h-4"></i></a>
+                            {% if current_user.user_role == 'admin' %}
+                            <a href="{{ url_for('view_document', doc_id=doc.id, edit='true') }}" title="Sửa" class="px-3 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 border-y border-l border-amber-600"><i data-lucide="pencil" class="w-4 h-4"></i></a>
+                            <button data-action="delete-doc" title="Xóa" data-id="{{ doc.id }}" class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-r-lg hover:bg-red-700 border-y border-l border-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="p-8 text-center text-slate-500">Chưa có tài liệu nào. Bấm "Thêm mới" để bắt đầu.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+</div>
+{% endblock %}

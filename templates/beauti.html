@@ -1,0 +1,493 @@
+{% extends "layout.html" %}
+{% block title %}Xem tài liệu: {{ doc.title }}{% endblock %}
+
+{% block content %}
+<form id="edit-form" method="POST" action="{{ url_for('edit_document', doc_id=doc.id) }}" enctype="multipart/form-data">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    <div class="flex-grow">
+      {% if edit_mode %}
+      <h1 class="text-3xl font-bold text-slate-900 break-words">Chỉnh sửa: {{ doc.title }}</h1>
+      {% else %}
+      <h1 class="text-3xl font-bold text-slate-900 break-words">{{ doc.title }}</h1>
+      {% endif %}
+      <p class="text-sm text-slate-500 mt-1">ID: DOC-00{{ doc.id }} · Ngày tạo: {{ doc.creation_date }}</p>
+    </div>
+    <div class="flex-shrink-0 flex items-center gap-2">
+      {% if edit_mode %}
+      <a href="{{ url_for('view_document', doc_id=doc.id) }}"
+         class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-slate-700 bg-white hover:bg-slate-100 border">
+        <i data-lucide="x" class="w-4 h-4 mr-2"></i> Hủy
+      </a>
+      <button type="submit"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-white bg-sky-600 hover:bg-sky-700">
+        <i data-lucide="save" class="w-4 h-4 mr-2"></i> Lưu thay đổi
+      </button>
+      {% else %}
+      <a href="{{ url_for('dashboard') }}"
+         class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-slate-700 bg-white hover:bg-slate-100 border">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Quay lại
+      </a>
+      {% if current_user.user_role == 'admin' %}
+      <a href="{{ url_for('view_document', doc_id=doc.id, edit='true') }}"
+         class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors text-white bg-amber-600 hover:bg-amber-700">
+        <i data-lucide="pencil" class="w-4 h-4 mr-2"></i> Sửa
+      </a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    <!-- LEFT -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Thông tin chung -->
+      <div class="rounded-lg border bg-white shadow-sm">
+        <div class="px-6 py-4"><h3 class="font-semibold text-xl">Thông tin chung</h3></div>
+        <div class="border-t text-base">
+          {% if edit_mode %}
+          <div class="divide-y divide-slate-100">
+            <div class="px-6 py-3 grid grid-cols-12 items-start gap-4">
+              <label class="col-span-4 text-sm text-slate-600 mt-2">Tiêu đề</label>
+              <div class="col-span-8">
+                <textarea name="title" rows="2" data-autogrow
+                  class="w-full min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 resize-y">{{ doc.title }}</textarea>
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Cơ quan</label>
+              <div class="col-span-8">
+                <input type="text" name="authoring_agency" value="{{ doc.authoring_agency }}"
+                  class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Quốc gia</label>
+              <div class="col-span-8">
+                <input type="text" name="country" value="{{ doc.country }}"
+                  class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Ngày tạo</label>
+              <div class="col-span-8">
+                <input type="date" name="creation_date" value="{{ doc.creation_date }}"
+                  class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Độ mật</label>
+              <div class="col-span-8">
+                <select name="confidentiality_level"
+                  class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                  <option value="Thường" {% if doc.confidentiality_level == 'Thường' %}selected{% endif %}>Thường</option>
+                  <option value="Mật" {% if doc.confidentiality_level == 'Mật' %}selected{% endif %}>Mật</option>
+                  <option value="Tối mật" {% if doc.confidentiality_level == 'Tối mật' %}selected{% endif %}>Tối mật</option>
+                  <option value="Tuyệt mật" {% if doc.confidentiality_level == 'Tuyệt mật' %}selected{% endif %}>Tuyệt mật</option>
+                </select>
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Độ khẩn</label>
+              <div class="col-span-8">
+                <select name="urgency_level"
+                  class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                  <option value="Thường" {% if doc.urgency_level == 'Thường' %}selected{% endif %}>Thường</option>
+                  <option value="Khẩn" {% if doc.urgency_level == 'Khẩn' %}selected{% endif %}>Khẩn</option>
+                  <option value="Hỏa tốc" {% if doc.urgency_level == 'Hỏa tốc' %}selected{% endif %}>Hỏa tốc</option>
+                  <option value="Thượng khẩn" {% if doc.urgency_level == 'Thượng khẩn' %}selected{% endif %}>Thượng khẩn</option>
+                </select>
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Nguồn</label>
+              <div class="col-span-8">
+                <select name="source_type"
+                  class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                  <option value="Đóng" {% if doc.source_type == 'Đóng' %}selected{% endif %}>Đóng</option>
+                  <option value="Nội bộ" {% if doc.source_type == 'Nội bộ' %}selected{% endif %}>Nội bộ</option>
+                  <option value="Mở" {% if doc.source_type == 'Mở' %}selected{% endif %}>Mở</option>
+                  <option value="Tổng hợp" {% if doc.source_type == 'Tổng hợp' %}selected{% endif %}>Tổng hợp</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <dl class="divide-y divide-slate-100">
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4"><dt class="col-span-4 text-slate-600">Tiêu đề</dt><dd class="col-span-8 font-medium text-slate-900 break-words">{{ doc.title }}</dd></div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4 bg-slate-50/50"><dt class="col-span-4 text-slate-600">Cơ quan</dt><dd class="col-span-8 font-medium text-slate-900 break-words">{{ doc.authoring_agency }}</dd></div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4"><dt class="col-span-4 text-slate-600">Quốc gia</dt><dd class="col-span-8 font-medium text-slate-900">{{ doc.country }}</dd></div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4 bg-slate-50/50"><dt class="col-span-4 text-slate-600">Ngày tạo</dt><dd class="col-span-8 font-medium text-slate-900">{{ doc.creation_date }}</dd></div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4"><dt class="col-span-4 text-slate-600">Độ mật</dt><dd class="col-span-8 font-medium text-slate-900">{{ doc.confidentiality_level }}</dd></div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4 bg-slate-50/50"><dt class="col-span-4 text-slate-600">Độ khẩn</dt><dd class="col-span-8 font-medium text-slate-900">{{ doc.urgency_level }}</dd></div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4"><dt class="col-span-4 text-slate-600">Nguồn</dt><dd class="col-span-8 font-medium text-slate-900">{{ doc.source_type }}</dd></div>
+          </dl>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Trạng thái & Xử lý -->
+      <div class="rounded-lg border bg-white shadow-sm">
+        <div class="px-6 py-4"><h3 class="font-semibold text-xl">Trạng thái & Xử lý</h3></div>
+        <div class="border-t text-base">
+          {% if edit_mode %}
+          <div class="divide-y divide-slate-100">
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Trạng thái</label>
+              <div class="col-span-8">
+                <select name="status"
+                        class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                  <option value="Chưa xử lý" {% if doc.status == 'Chưa xử lý' %}selected{% endif %}>Chưa xử lý</option>
+                  <option value="Đang xử lý" {% if doc.status == 'Đang xử lý' %}selected{% endif %}>Đang xử lý</option>
+                  <option value="Đã xử lý" {% if doc.status == 'Đã xử lý' %}selected{% endif %}>Đã xử lý</option>
+                </select>
+              </div>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
+              <label class="col-span-4 text-sm text-slate-600">Người xử lý</label>
+              <div class="col-span-8">
+                <select name="handler_id"
+                        class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                  <option value="null">-- Chưa giao --</option>
+                  {% for user in users %}
+                  <option value="{{ user.id }}" {% if doc.handler_id == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <dl class="divide-y divide-slate-100">
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4">
+              <dt class="col-span-4 text-slate-600">Trạng thái</dt>
+              <dd class="col-span-8 font-medium">
+                {% if doc.status == 'Đã xử lý' %}<span class="text-green-600">{{ doc.status }}</span>
+                {% elif doc.status == 'Đang xử lý' %}<span class="text-amber-600">{{ doc.status }}</span>
+                {% else %}<span class="text-red-600">{{ doc.status }}</span>{% endif %}
+              </dd>
+            </div>
+            <div class="px-6 py-3 grid grid-cols-12 gap-x-4 bg-slate-50/50">
+              <dt class="col-span-4 text-slate-600">Người xử lý</dt>
+              <dd class="col-span-8 font-medium text-slate-900">{{ doc.handler_name or 'Chưa giao' }}</dd>
+            </div>
+          </dl>
+          {% endif %}
+
+          {% if current_user.user_id == doc.handler_id and doc.status == 'Đang xử lý' %}
+          <div class="px-6 py-5 border-t">
+            <button type="submit"
+                    formmethod="POST"
+                    formaction="{{ url_for('report_document', doc_id=doc.id) }}"
+                    class="w-full inline-flex items-center justify-center px-4 py-2 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+              <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Báo cáo Hoàn thành
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="lg:col-span-2 space-y-6">
+      {% set img_exts = ['jpg','jpeg','png','gif','webp','bmp'] %}
+      {% set doc_exts = ['doc','docx','odt','rtf'] %}
+      {% set txt_exts = ['txt','csv','json','md','log'] %}
+
+      {% macro file_card(section_title, file_path, input_name) %}
+        {% set file_path_norm = (file_path or '').replace('\\','/') %}
+        {% set filename = file_path_norm.rsplit('/',1)[-1] if file_path_norm else '' %}
+        {% set ext = (filename.rsplit('.',1)[1] | lower) if (filename and '.' in filename) else '' %}
+        {% set ext_u = ext.upper() if ext else 'N/A' %}
+        {% set icon = 'file' %}
+        {% if ext in img_exts %}{% set icon = 'image' %}
+        {% elif ext == 'pdf' %}{% set icon = 'file' %}
+        {% elif ext in doc_exts or ext in txt_exts %}{% set icon = 'file-text' %}
+        {% endif %}
+
+        <div class="rounded-lg border bg-white shadow-sm">
+          <div class="px-6 py-4 flex items-center justify-between">
+            <h3 class="font-semibold text-xl">{{ section_title }}</h3>
+
+            {% if not edit_mode and filename %}
+            <div class="flex gap-2">
+              <button type="button"
+                      class="px-3 py-1.5 rounded-md text-white bg-sky-600 hover:bg-sky-700 text-sm"
+                      data-view-file="{{ url_for('serve_upload', filename=filename) }}"
+                      data-file-ext="{{ ext }}"
+                      data-title="{{ section_title }}">
+                <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem
+              </button>
+              <a class="px-3 py-1.5 rounded-md border text-sm text-slate-700 hover:bg-slate-50"
+                 href="{{ url_for('serve_upload', filename=filename) }}" download>
+                <i data-lucide="download" class="w-4 h-4 mr-1 inline-block"></i> Tải xuống
+              </a>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="border-t">
+            {% if edit_mode %}
+              <div class="p-6 space-y-4">
+                <input type="hidden" name="remove_{{ input_name }}" id="remove_{{ input_name }}" value="0">
+                <input type="hidden" id="title_{{ input_name }}" value="{{ section_title }}">
+                <div id="holder_{{ input_name }}" class="space-y-3">
+                  {% if filename %}
+                  <div id="row_{{ input_name }}_current" class="flex items-center justify-between p-3 rounded-lg border bg-slate-50">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-xl bg-white border flex items-center justify-center relative" title="{{ filename }}">
+                        <i data-lucide="{{ icon }}" class="w-6 h-6 text-slate-600"></i>
+                        <span class="absolute -bottom-1 right-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">{{ ext_u }}</span>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="font-medium text-slate-900 truncate max-w-[52ch]">{{ filename }}</div>
+                        <div class="text-xs text-slate-500">Tệp hiện tại</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button type="button"
+                              class="px-3 py-1.5 rounded-md text-white bg-sky-600 hover:bg-sky-700 text-sm"
+                              data-view-file="{{ url_for('serve_upload', filename=filename) }}"
+                              data-file-ext="{{ ext }}"
+                              data-title="{{ section_title }}">
+                        <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem
+                      </button>
+                      <button type="button"
+                              class="px-3 py-1.5 rounded-md text-white bg-red-600 hover:bg-red-700 text-sm"
+                              data-delete-file
+                              data-remove-input="remove_{{ input_name }}"
+                              data-row-id="row_{{ input_name }}_current"
+                              data-file-label="{{ filename }}"
+                              data-file-input="fileinput_{{ input_name }}">
+                        <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Xóa
+                      </button>
+                    </div>
+                  </div>
+                  {% else %}
+                  <div class="__empty p-3 text-sm text-slate-500">Chưa có tệp.</div>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-600 mb-1">Chọn tệp mới (tùy chọn)</label>
+                  <input type="file" id="fileinput_{{ input_name }}" name="{{ input_name }}_file"
+                         class="block w-full text-sm file:mr-4 file:py-2.5 file:px-3 file:rounded-md file:border-0 file:bg-slate-800 file:text-white hover:file:bg-slate-700">
+                  <p class="text-xs text-slate-500 mt-1">Chọn tệp để thay thế/bổ sung. Có thể xem trước ngay.</p>
+                </div>
+              </div>
+            {% else %}
+              <div class="p-6">
+                {% if filename %}
+                <div class="flex items-center gap-3">
+                  <div class="w-14 h-14 rounded-xl bg-slate-100 border flex items-center justify-center relative" title="{{ filename }}">
+                    <i data-lucide="{{ icon }}" class="w-7 h-7 text-slate-700"></i>
+                    <span class="absolute -bottom-1 right-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">{{ ext_u }}</span>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="font-medium text-slate-900 truncate max-w-[52ch]">{{ filename }}</div>
+                    <div class="text-xs text-slate-500">Nhấn “Xem” để mở trong cửa sổ bật lên.</div>
+                  </div>
+                </div>
+                {% else %}
+                <div class="text-sm text-slate-500">Chưa có tệp.</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endmacro %}
+
+      {{ file_card('Nội dung Gốc', doc.original_file_path or '', 'original') }}
+      {{ file_card('Nội dung Bản dịch', doc.translated_file_path or '', 'translated') }}
+    </div>
+  </div>
+</form>
+
+<!-- Modal xem file (center) -->
+<div id="fileViewerModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50" data-close-viewer></div>
+  <div class="relative z-10 w-[95vw] max-w-5xl bg-white rounded-xl shadow-xl">
+    <div class="flex items-center justify-between px-5 py-4 border-b">
+      <h3 id="viewerTitle" class="text-lg font-semibold">Xem tệp</h3>
+      <button type="button" class="p-2 rounded hover:bg-slate-100" data-close-viewer>
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div id="viewerBody" class="p-0"></div>
+    <div class="flex justify-end gap-2 px-5 py-4 border-t">
+      <a id="viewerDownload" href="#" download
+         class="px-4 py-2 rounded-md border text-slate-700 text-sm hover:bg-slate-50">
+        <i data-lucide="download" class="w-4 h-4 mr-1 inline-block"></i> Tải xuống
+      </a>
+      <button type="button" class="px-4 py-2 rounded-md bg-slate-800 text-white text-sm hover:bg-slate-700" data-close-viewer>Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xác nhận xóa (center) -->
+<div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50" data-close-confirm></div>
+  <div class="relative z-10 w-[92vw] max-w-md bg-white rounded-xl shadow-xl">
+    <div class="flex items-center justify-between px-5 py-4 border-b">
+      <h3 class="text-lg font-semibold">Xóa tệp?</h3>
+      <button type="button" class="p-2 rounded hover:bg-slate-100" data-close-confirm>
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-5 text-slate-700" id="confirmDeleteText">Bạn có chắc chắn muốn xóa tệp hiện tại?</div>
+    <div class="flex justify-end gap-2 px-5 py-4 border-t">
+      <button type="button" class="px-4 py-2 rounded-md border text-slate-700 text-sm hover:bg-slate-50" data-close-confirm>Hủy</button>
+      <button type="button" id="confirmDeleteBtn" class="px-4 py-2 rounded-md bg-red-600 text-white text-sm hover:bg-red-700">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ===== Auto-grow textarea =====
+  document.querySelectorAll('textarea[data-autogrow]').forEach(t=>{
+    const fit=()=>{ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; };
+    ['input','change'].forEach(ev=>t.addEventListener(ev,fit));
+    fit();
+  });
+
+  // ===== Viewer modal =====
+  const viewer = document.getElementById('fileViewerModal');
+  const vTitle = document.getElementById('viewerTitle');
+  const vBody  = document.getElementById('viewerBody');
+  const vDown  = document.getElementById('viewerDownload');
+  const openViewer = () => viewer.classList.remove('hidden');
+  const closeViewer = () => { viewer.classList.add('hidden'); vBody.innerHTML=''; };
+
+  function renderContent(url, ext) {
+    ext = (ext||'').toLowerCase();
+    const img = ['jpg','jpeg','png','gif','webp','bmp'];
+    const txt = ['txt','csv','json','md','log'];
+    if (ext === 'pdf') vBody.innerHTML = `<div class="h-[78vh]"><embed src="${url}" type="application/pdf" class="w-full h-full"/></div>`;
+    else if (img.includes(ext)) vBody.innerHTML = `<div class="p-4 flex justify-center items-center"><img src="${url}" class="max-h-[78vh] w-auto"/></div>`;
+    else if (txt.includes(ext)) vBody.innerHTML = `<iframe src="${url}" class="w-full h-[78vh]"></iframe>`;
+    else vBody.innerHTML = `<div class="p-6 text-sm text-slate-600">Định dạng .${ext||'không xác định'} chưa hỗ trợ xem trực tiếp.</div>`;
+  }
+
+  document.querySelectorAll('[data-view-file]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const url = btn.getAttribute('data-view-file');
+      const ext = btn.getAttribute('data-file-ext') || '';
+      const ttl = btn.getAttribute('data-title') || 'Xem tệp';
+      vTitle.textContent = ttl;
+      vDown.href = url;
+      renderContent(url, ext);
+      openViewer();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  });
+
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeViewer(); closeConfirm(); } });
+  viewer.querySelectorAll('[data-close-viewer]').forEach(el => el.addEventListener('click', closeViewer));
+
+  // ===== Confirm delete modal =====
+  const confirmModal = document.getElementById('confirmDeleteModal');
+  const confirmText  = document.getElementById('confirmDeleteText');
+  const confirmBtn   = document.getElementById('confirmDeleteBtn');
+  let pending = null;
+
+  const openConfirm = () => confirmModal.classList.remove('hidden');
+  function closeConfirm(){ confirmModal.classList.add('hidden'); pending=null; }
+  confirmModal.querySelectorAll('[data-close-confirm]').forEach(el => el.addEventListener('click', closeConfirm));
+
+  document.querySelectorAll('[data-delete-file]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      pending = {
+        removeId: btn.getAttribute('data-remove-input'),
+        rowId:    btn.getAttribute('data-row-id'),
+        label:    btn.getAttribute('data-file-label') || 'tệp hiện tại',
+        inputId:  btn.getAttribute('data-file-input')
+      };
+      confirmText.innerHTML = `Bạn có chắc chắn muốn <b>xóa</b> “${pending.label}”?<br>Tệp sẽ bị xóa khi bấm <b>Lưu thay đổi</b>.`;
+      openConfirm();
+    });
+  });
+
+  confirmBtn.addEventListener('click',()=>{
+    if(!pending) return closeConfirm();
+    const hid = document.getElementById(pending.removeId);
+    if (hid) hid.value = '1';
+    const finput = document.getElementById(pending.inputId);
+    if (finput) finput.value = '';
+    const row = document.getElementById(pending.rowId);
+    if (row) {
+      row.className = 'flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50';
+      row.innerHTML = `<i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
+                       <span class="text-red-700 font-medium">Đã đánh dấu xóa “${pending.label}”.</span>`;
+      if (window.lucide) window.lucide.createIcons();
+    }
+    closeConfirm();
+  });
+
+  // ===== Live preview khi chọn file mới (kể cả trước đó chưa có) =====
+  const imgExts = ['jpg','jpeg','png','gif','webp','bmp'];
+  const txtExts = ['txt','csv','json','md','log'];
+  const iconForExt = (e)=> imgExts.includes(e)?'image':(e==='pdf'?'file':(txtExts.includes(e)||['doc','docx','odt','rtf'].includes(e)?'file-text':'file'));
+
+  function wireInput(name){
+    const input  = document.getElementById(`fileinput_${name}`);
+    const holder = document.getElementById(`holder_${name}`);
+    const title  = document.getElementById(`title_${name}`)?.value || 'Tệp';
+    if(!input || !holder) return;
+
+    input.addEventListener('change', ()=>{
+      holder.querySelectorAll('.__empty').forEach(n=>n.remove());
+      const file = input.files && input.files[0];
+      if(!file){ return; }
+
+      const ext = file.name.split('.').pop().toLowerCase();
+      const icon = iconForExt(ext);
+      const url  = URL.createObjectURL(file);
+
+      holder.querySelectorAll('.__temp').forEach(n=>n.remove());
+      const div = document.createElement('div');
+      div.className = '__temp flex items-center justify-between p-3 rounded-lg border bg-slate-50';
+      div.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-white border flex items-center justify-center relative" title="${file.name}">
+            <i data-lucide="${icon}" class="w-6 h-6 text-slate-600"></i>
+            <span class="absolute -bottom-1 right-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">${ext.toUpperCase()}</span>
+          </div>
+          <div class="min-w-0">
+            <div class="font-medium text-slate-900 truncate max-w-[52ch]">${file.name}</div>
+            <div class="text-xs text-slate-500">Tệp tạm (chưa lưu)</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-md text-white bg-sky-600 hover:bg-sky-700 text-sm"
+                  data-temp-view data-url="${url}" data-ext="${ext}" data-title="${title}">
+            <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem
+          </button>
+          <button type="button" class="px-3 py-1.5 rounded-md text-slate-700 border hover:bg-slate-50 text-sm" data-temp-clear>
+            Bỏ chọn
+          </button>
+        </div>`;
+      holder.prepend(div);
+      if (window.lucide) window.lucide.createIcons();
+
+      div.querySelector('[data-temp-view]').addEventListener('click', (e)=>{
+        const url = e.currentTarget.getAttribute('data-url');
+        const ext = e.currentTarget.getAttribute('data-ext');
+        vTitle.textContent = title;
+        vDown.href = url;
+        renderContent(url, ext);
+        viewer.classList.remove('hidden');
+      });
+      div.querySelector('[data-temp-clear]').addEventListener('click', ()=>{
+        input.value = '';
+        div.remove();
+      });
+    });
+  }
+  wireInput('original');
+  wireInput('translated');
+
+  function closeConfirm(){ document.getElementById('confirmDeleteModal').classList.add('hidden'); pending=null; }
+})();
+</script>
+{% endblock %}
+

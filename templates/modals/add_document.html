@@ -1,0 +1,32 @@
+<div id="add-document-modal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50">
+    <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-3xl transform scale-95">
+         <form method="POST" action="{{ url_for('add_document') }}" enctype="multipart/form-data" class="p-0">
+            <div class="flex justify-between items-center p-4 bg-sky-600 text-white rounded-t-lg">
+                <h2 class="text-xl font-bold">Thêm Tài liệu mới</h2>
+                <button type="button" data-action="close-modal" class="p-1 rounded-full hover:bg-sky-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-8 max-h-[80vh] overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Tiêu đề</label><input type="text" name="title" required class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Cơ quan soạn thảo</label><input type="text" name="authoring_agency" required class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Quốc gia</label><input type="text" name="country" required class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Ngày tạo</label><input type="date" name="creation_date" required class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Nguồn</label><select name="source_type" class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"><option>Đóng</option><option>Nội bộ</option><option>Mở</option><option>Tổng hợp</option></select></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Độ mật</label><select name="confidentiality_level" class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"><option>Thường</option><option>Mật</option><option>Tối mật</option><option>Tuyệt mật</option></select></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Độ khẩn</label><select name="urgency_level" class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"><option>Thường</option><option>Khẩn</option><option>Hỏa tốc</option><option>Thượng khẩn</option></select></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Giao cho (Người xử lý)</label><select name="handler_id" id="form-handler_id" class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></select></div>
+                </div>
+                <div class="pt-6 mt-6 border-t border-slate-200">
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Tệp tài liệu gốc (.pdf, .docx, .txt)</label><input type="file" name="original_file" class="block w-full text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></div>
+                    <div class="mb-5"><label class="block mb-2 text-base font-semibold text-slate-700">Tệp bản dịch (.pdf, .docx, .txt)</label><input type="file" name="translated_file" class="block w-full text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg">
+                <button type="button" data-action="close-modal" class="inline-flex items-center justify-center px-4 py-2 text-base font-medium rounded-md shadow-sm transition-colors text-slate-700 bg-white hover:bg-slate-100 border">Hủy</button>
+                <button type="submit" class="inline-flex items-center justify-center px-4 py-2 text-base font-medium rounded-md shadow-sm transition-colors text-white bg-slate-800 hover:bg-slate-900">Lưu Tài liệu</button>
+            </div>
+         </form>
+    </div>
+</div>

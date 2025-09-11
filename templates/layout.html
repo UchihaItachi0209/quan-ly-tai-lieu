@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} - Document Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; font-size: 16px; }
+        .sidebar { background-color: #1e293b; color: #cbd5e1; }
+        .sidebar-link { @apply flex items-center gap-3 rounded-md px-3 py-2 text-slate-300 transition-all hover:text-white; }
+        .sidebar-link.active { @apply bg-slate-700 text-white; }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        /* Xóa bỏ các class tùy chỉnh cũ */
+    </style>
+</head>
+<body class="h-full">
+<div class="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
+    <div id="sidebar" class="hidden border-r sidebar lg:block">
+        <div class="flex h-full max-h-screen flex-col gap-2">
+            <div class="flex h-[60px] items-center border-b border-slate-700 px-6">
+                <a href="/" class="flex items-center gap-3 font-semibold text-white">
+                    <i data-lucide="book-marked" class="h-6 w-6 text-sky-400"></i><span class="text-lg">Document Hub</span>
+                </a>
+            </div>
+            <div class="flex-1">
+                <nav class="grid items-start px-4 text-sm font-medium">
+                    <div class="text-xs font-semibold text-slate-500 uppercase my-3 px-3">Thống kê & Cảnh báo</div>
+                    <a href="{{ url_for('dashboard') }}" class="sidebar-link {{ 'active' if active_page == 'dashboard' or active_page == 'documents' }}">
+                        <i data-lucide="home" class="h-4 w-4"></i>Dashboard
+                    </a>
+                    <div class="text-xs font-semibold text-slate-500 uppercase my-3 px-3">Quản lý</div>
+                    <a href="{{ url_for('manage_users') }}" class="sidebar-link {{ 'active' if active_page == 'users' }}">
+                        <i data-lucide="users" class="h-4 w-4"></i>Quản lý Người dùng
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-col">
+        <header class="flex h-14 items-center gap-4 border-b bg-white px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
+            <button id="menu-button" class="lg:hidden p-2 -ml-2"><i data-lucide="menu" class="w-6 h-6"></i></button>
+            <div class="w-full flex-1"></div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <p class="font-semibold text-sm text-slate-900">{{ current_user.user_name }}</p>
+                    <p class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</p>
+                </div>
+                <img src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0284c7&color=fff&rounded=true&size=40" alt="Avatar" class="rounded-full">
+                 <a href="{{ url_for('logout') }}" title="Đăng xuất" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"><i data-lucide="log-out" class="w-5 h-5"></i></a>
+            </div>
+        </header>
+        <main class="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-slate-100">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="w-full text-base p-3 rounded-md {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-700' }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{% include 'modals/add_document.html' %}
+{% include 'modals/add_user.html' %}
+{% include 'modals/view_user.html' %} 
+{% include 'modals/edit_user.html' %} 
+
+
+<script>
+    lucide.createIcons();
+    const docModal = document.getElementById('add-document-modal');
+    const addUserModal = document.getElementById('add-user-modal');
+    const viewUserModal = document.getElementById('view-user-modal');
+    const editUserModal = document.getElementById('edit-user-modal');
+
+
+    function openModal(modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    function closeModal(modal) { modal.classList.add('hidden'); modal.classList.remove('flex');}
+
+    function populateHandlerDropdown(selectElement, users) {
+        selectElement.innerHTML = '<option value="null">-- Chưa giao --</option>';
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.full_name;
+            selectElement.appendChild(option);
+        });
+    }
+
+    document.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.dataset.action;
+
+        if (action === 'open-add-modal') {
+            const users = JSON.parse(target.dataset.users);
+            docModal.querySelector('form').reset();
+            populateHandlerDropdown(document.getElementById('form-handler_id'), users);
+            openModal(docModal);
+        }
+        if (action === 'open-add-user-modal') { 
+            addUserModal.querySelector('form').reset();
+            const passwordInput = addUserModal.querySelector('input[name="password"]');
+            const confirmPasswordInput = addUserModal.querySelector('input[name="confirm_password"]');
+            const passwordMismatch = addUserModal.querySelector('#add-password-mismatch-message');
+            passwordInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            confirmPasswordInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            if (passwordMismatch) passwordMismatch.classList.add('hidden');
+            openModal(addUserModal); 
+        }
+        if (action === 'open-view-user-modal') {
+            const userId = target.dataset.id;
+            const usersData = JSON.parse(target.dataset.users);
+            const user = usersData.find(u => u.id == userId);
+            if (user) {
+                viewUserModal.querySelector('#view-full_name').textContent = user.full_name;
+                viewUserModal.querySelector('#view-position').textContent = user.position;
+                viewUserModal.querySelector('#view-username').textContent = user.username;
+                viewUserModal.querySelector('#view-role').textContent = user.role === 'admin' ? 'Quản trị viên' : 'Người dùng';
+                openModal(viewUserModal);
+            }
+        }
+        if (action === 'open-edit-user-modal') {
+            const userId = target.dataset.id;
+            const usersData = JSON.parse(target.dataset.users);
+            const user = usersData.find(u => u.id == userId);
+            if (user) {
+                const form = editUserModal.querySelector('form');
+                form.action = `/users/${userId}/edit`;
+                form.querySelector('input[name="full_name"]').value = user.full_name;
+                form.querySelector('input[name="position"]').value = user.position;
+                form.querySelector('input[name="username"]').value = user.username;
+                form.querySelector('input[name="username"]').readOnly = true;
+                form.querySelector('select[name="role"]').value = user.role;
+                
+                form.querySelector('input[name="password"]').value = '';
+                form.querySelector('input[name="confirm_password"]').value = '';
+                const passwordMismatch = editUserModal.querySelector('#edit-password-mismatch-message');
+                if (passwordMismatch) passwordMismatch.classList.add('hidden');
+
+                openModal(editUserModal);
+            }
+        }
+        if (action === 'delete-user') {
+            if (confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/users/${target.dataset.id}/delete`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        if (action === 'close-modal') { closeModal(target.closest('.modal')); }
+        if (action === 'delete-doc') {
+            if (confirm('Bạn có chắc chắn muốn xóa tài liệu này không?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/documents/${target.dataset.id}/delete`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    });
+
+    const add_addUserForm = addUserModal.querySelector('form');
+    if (add_addUserForm) {
+        const passwordInput = add_addUserForm.querySelector('input[name="password"]');
+        const confirmPasswordInput = add_addUserForm.querySelector('input[name="confirm_password"]');
+        let passwordMismatchMessage = add_addUserForm.querySelector('#add-password-mismatch-message');
+
+        const checkAddPasswords = () => {
+            if (confirmPasswordInput.value && passwordInput.value !== confirmPasswordInput.value) {
+                passwordMismatchMessage.classList.remove('hidden');
+                passwordInput.classList.add('border-red-500');
+                confirmPasswordInput.classList.add('border-red-500');
+                return false;
+            } else {
+                passwordMismatchMessage.classList.add('hidden');
+                passwordInput.classList.remove('border-red-500');
+                confirmPasswordInput.classList.remove('border-red-500');
+                return true;
+            }
+        };
+
+        passwordInput.addEventListener('input', checkAddPasswords);
+        confirmPasswordInput.addEventListener('input', checkAddPasswords);
+
+        add_addUserForm.addEventListener('submit', (e) => {
+            if (!checkAddPasswords()) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    const edit_editUserForm = editUserModal.querySelector('form');
+    if (edit_editUserForm) {
+        const passwordInput = edit_editUserForm.querySelector('input[name="password"]');
+        const confirmPasswordInput = edit_editUserForm.querySelector('input[name="confirm_password"]');
+        let passwordMismatchMessage = edit_editUserForm.querySelector('#edit-password-mismatch-message');
+
+        const checkEditPasswords = () => {
+            if (passwordInput.value || confirmPasswordInput.value) {
+                if (passwordInput.value !== confirmPasswordInput.value) {
+                    passwordMismatchMessage.classList.remove('hidden');
+                    passwordInput.classList.add('border-red-500');
+                    confirmPasswordInput.classList.add('border-red-500');
+                    return false;
+                }
+            }
+            passwordMismatchMessage.classList.add('hidden');
+            passwordInput.classList.remove('border-red-500');
+            passwordInput.classList.remove('border-red-500');
+            confirmPasswordInput.classList.remove('border-red-500');
+            return true;
+        };
+
+        passwordInput.addEventListener('input', checkEditPasswords);
+        confirmPasswordInput.addEventListener('input', checkEditPasswords);
+
+        edit_editUserForm.addEventListener('submit', (e) => {
+            if (!checkEditPasswords()) {
+                e.preventDefault(); 
+            }
+        });
+    }
+
+
+    const menuButton = document.getElementById('menu-button');
+    const sidebar = document.getElementById('sidebar');
+    if (menuButton) {
+        menuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+    }
+</script>
+</body>
+</html>

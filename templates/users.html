@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block title %}Quản lý Người dùng{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between">
+    <div>
+        <h1 class="text-3xl font-bold text-slate-900">Quản lý Người dùng</h1>
+        <p class="text-base text-slate-500 mt-1">Thêm, sửa, xóa tài khoản người dùng trong hệ thống.</p>
+    </div>
+</div>
+
+<div class="rounded-lg border bg-white text-card-foreground shadow-sm mt-6">
+    <div class="p-6 flex items-center justify-between">
+        <div><h3 class="tracking-tight text-xl font-semibold">Dữ liệu Người dùng</h3></div>
+        <button data-action="open-add-user-modal" class="inline-flex items-center justify-center px-4 py-2 text-base font-medium rounded-md shadow-sm transition-colors text-white bg-teal-600 hover:bg-teal-700">
+            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>Thêm người dùng
+        </button>
+    </div>
+    <div class="border-t">
+        <div class="relative w-full overflow-auto">
+            <table class="w-full caption-bottom text-base">
+                <thead class="[&_tr]:border-b bg-slate-100">
+                    <tr class="border-b transition-colors">
+                        <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600 w-16">STT</th>
+                        <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600">Họ và tên</th>
+                        <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600">Tên đăng nhập</th>
+                        <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600">Chức vụ</th>
+                        <th class="h-12 px-4 text-left align-middle font-semibold text-slate-600">Vai trò</th>
+                        <th class="h-12 px-4 text-right align-middle font-semibold text-slate-600">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody class="[&_tr:last-child]:border-0 divide-y divide-slate-100">
+                    {% for user in users %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="p-4 align-middle font-medium text-slate-600">{{ loop.index }}</td>
+                        <td class="p-4 align-middle font-medium text-slate-900">{{ user.full_name }}</td>
+                        <td class="p-4 align-middle text-slate-500">{{ user.username }}</td>
+                        <td class="p-4 align-middle text-slate-500">{{ user.position }}</td>
+                        <td class="p-4 align-middle text-slate-500">{{ 'Quản trị viên' if user.role == 'admin' else 'Người dùng' }}</td>
+                        <td class="p-4 align-middle text-right">
+                            <div class="inline-flex rounded-md shadow-sm">
+                                <button data-action="open-view-user-modal" data-id="{{ user.id }}" data-users='{{ users | tojson | forceescape }}' title="Xem chi tiết" class="px-3 py-2 text-base font-medium text-white bg-sky-600 rounded-l-lg hover:bg-sky-700"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                                <button data-action="open-edit-user-modal" data-id="{{ user.id }}" data-users='{{ users | tojson | forceescape }}' title="Sửa" class="px-3 py-2 text-base font-medium text-white bg-amber-500 hover:bg-amber-600 border-y border-l border-amber-600"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                <button data-action="delete-user" data-id="{{ user.id }}" title="Xóa" class="px-3 py-2 text-base font-medium text-white bg-red-600 rounded-r-lg hover:bg-red-700 border-y border-l border-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="p-8 text-center text-slate-500">Chưa có người dùng nào.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
