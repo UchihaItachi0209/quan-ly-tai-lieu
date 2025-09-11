@@ -17,7 +17,7 @@ git clone <URL-CỦA-BẠN-TRÊN-GITHUB>
 cd quan-ly-tai-lieu
 ```
 
-Bước 2: Tạo và Kích hoạt Môi trường ảo
+**2. Tạo và Kích hoạt Môi trường ảo**
 Đây là bước quan trọng để đảm bảo các gói thư viện của dự án không ảnh hưởng đến hệ thống chung.
 
 ```
@@ -30,11 +30,11 @@ source venv/bin/activate
 
 Sau khi chạy lệnh trên, bạn sẽ thấy (venv) xuất hiện ở đầu dòng lệnh.
 
-Bước 3: Cài đặt các Gói Thư viện cần thiết
+**3. Cài đặt các Gói Thư viện cần thiết**
 Lệnh này sẽ tự động đọc file requirements.txt và cài đặt tất cả các thư viện cần thiết với đúng phiên bản.
 pip install -r requirements.txt
 
-Bước 4: Khởi tạo Cơ sở dữ liệu
+**4. Khởi tạo Cơ sở dữ liệu**
 Lệnh này chỉ cần chạy một lần duy nhất khi cài đặt lần đầu.
 
 ```
@@ -45,7 +45,7 @@ flask init-db
 flask create-admin
 ```
 
-Bước 5: Chạy Ứng dụng
+**5. Chạy Ứng dụng**
 
 ```flask run```
 
