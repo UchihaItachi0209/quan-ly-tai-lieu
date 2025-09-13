@@ -27,37 +27,61 @@
   #doc-table-scroll tbody td:nth-child(2){ text-align:left; }
 </style>
 
-<!-- Cards -->
-<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-  <div class="rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow">
-    <div class="p-6 flex items-center justify-between pb-2">
-      <h3 class="tracking-tight font-semibold">Tổng số tài liệu</h3>
-      <i data-lucide="files" class="h-5 w-5 text-slate-500"></i>
+<!-- THỐNG KÊ -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+  <!-- Tổng số tài liệu -->
+  <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
+    <div class="px-5 py-4 bg-blue-50 border-b border-blue-100">
+      <div class="flex items-center gap-3">
+        <span class="icon-pill bg-blue-500/15 text-blue-600">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+        </span>
+        <h3 class="font-semibold text-slate-800">Tổng số tài liệu</h3>
+      </div>
     </div>
-    <div class="p-6 pt-0"><div class="text-3xl font-bold text-slate-900">{{ stats.total }}</div></div>
+    <div class="px-5 py-5 text-4xl font-bold text-slate-900">{{ stats.total }}</div>
   </div>
-  <div class="rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow">
-    <div class="p-6 flex items-center justify-between pb-2">
-      <h3 class="tracking-tight font-semibold">Chưa xử lý</h3>
-      <i data-lucide="file-question" class="h-5 w-5 text-slate-500"></i>
+
+  <!-- Chưa xử lý -->
+  <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
+    <div class="px-5 py-4 bg-rose-50 border-b border-rose-100">
+      <div class="flex items-center gap-3">
+        <span class="icon-pill bg-rose-500/15 text-rose-600">
+          <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+        </span>
+        <h3 class="font-semibold text-slate-800">Chưa xử lý</h3>
+      </div>
     </div>
-    <div class="p-6 pt-0"><div class="text-3xl font-bold text-red-600">{{ stats.unassigned }}</div></div>
+    <div class="px-5 py-5 text-4xl font-bold text-rose-600">{{ stats.unassigned if stats else 0 }}</div>
   </div>
-  <div class="rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow">
-    <div class="p-6 flex items-center justify-between pb-2">
-      <h3 class="tracking-tight font-semibold">Đang xử lý</h3>
-      <i data-lucide="loader-circle" class="h-5 w-5 text-slate-500"></i>
+
+  <!-- Đang xử lý -->
+  <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
+    <div class="px-5 py-4 bg-amber-50 border-b border-amber-100">
+      <div class="flex items-center gap-3">
+        <span class="icon-pill bg-amber-500/15 text-amber-600">
+          <i data-lucide="clock-9" class="w-5 h-5"></i>
+        </span>
+        <h3 class="font-semibold text-slate-800">Đang xử lý</h3>
+      </div>
     </div>
-    <div class="p-6 pt-0"><div class="text-3xl font-bold text-amber-600">{{ stats.processing }}</div></div>
+    <div class="px-5 py-5 text-4xl font-bold text-amber-600">{{ stats.processing if stats else 0 }}</div>
   </div>
-  <div class="rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow">
-    <div class="p-6 flex items-center justify-between pb-2">
-      <h3 class="tracking-tight font-semibold">Đã xử lý</h3>
-      <i data-lucide="check-circle" class="h-5 w-5 text-slate-500"></i>
+
+  <!-- Đã xử lý -->
+  <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
+    <div class="px-5 py-4 bg-emerald-50 border-b border-emerald-100">
+      <div class="flex items-center gap-3">
+        <span class="icon-pill bg-emerald-500/15 text-emerald-600">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </span>
+        <h3 class="font-semibold text-slate-800">Đã xử lý</h3>
+      </div>
     </div>
-    <div class="p-6 pt-0"><div class="text-3xl font-bold text-green-600">{{ stats.completed }}</div></div>
+    <div class="px-5 py-5 text-4xl font-bold text-emerald-600">{{ stats.completed if stats else 0 }}</div>
   </div>
 </div>
+
 
 <!-- Danh sách + Bộ lọc -->
 <div class="rounded-lg border bg-white shadow-sm mt-4">
