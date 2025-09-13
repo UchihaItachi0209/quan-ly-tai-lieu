@@ -29,22 +29,23 @@
           </div>
 
           <div class="mb-5">
-            <label class="block mb-2 text-base font-semibold text-slate-700">Thời gian soạn thảo</label>
-            <input type="date" name="creation_date" required
+            <label class="block mb-2 text-base font-semibold text-slate-700">Ngày tạo</label>
+            <input type="date" name="creation_date" id="add-creation-date" required
                    class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
           </div>
 
-          <!-- Tuần (độc lập ngày) -->
+          <!-- Tuần -->
           <div class="mb-5">
             <label class="block mb-2 text-base font-semibold text-slate-700">Tuần</label>
-            <input type="number" name="week_number" min="0" max="53" placeholder="0–53"
+            <input type="number" name="week_display" id="add-week" min="0" max="53" placeholder="Tự tính từ Ngày tạo"
                    class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+            <p class="mt-1 text-xs text-slate-400">Theo quy tắc tuần %W của SQLite (Thứ Hai là đầu tuần, 00–53).</p>
           </div>
 
-          <!-- Năm (độc lập ngày) -->
+          <!-- Năm -->
           <div class="mb-5">
             <label class="block mb-2 text-base font-semibold text-slate-700">Năm</label>
-            <input type="number" name="year_number" placeholder="VD: 2025"
+            <input type="number" name="year_display" id="add-year" placeholder="Tự tính từ Ngày tạo"
                    class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
           </div>
 
@@ -81,31 +82,14 @@
 
         <div class="pt-6 mt-6 border-t border-slate-200">
           <div class="mb-5">
-            <label class="block mb-2 text-base font-semibold text-slate-700">
-              Tệp tài liệu gốc (.pdf, .docx, .txt, .zip, .rar, …) — *không bắt buộc
-            </label>
+            <label class="block mb-2 text-base font-semibold text-slate-700">Tệp tài liệu gốc (.pdf, .docx, .txt)</label>
             <input type="file" name="original_file"
                    class="block w-full text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
           </div>
           <div class="mb-5">
-            <label class="block mb-2 text-base font-semibold text-slate-700">
-              Tệp bản dịch (.pdf, .docx, .txt, .zip, .rar, …) — *không bắt buộc
-            </label>
+            <label class="block mb-2 text-base font-semibold text-slate-700">Tệp bản dịch (.pdf, .docx, .txt)</label>
             <input type="file" name="translated_file"
                    class="block w-full text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-          </div>
-        </div>
-
-        <div class="pt-6 mt-6 border-t border-slate-200 grid grid-cols-1 gap-5">
-          <div>
-            <label class="block mb-2 text-base font-semibold text-slate-700">Nội dung chính</label>
-            <textarea name="main_content" rows="4"
-                      class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
-          </div>
-          <div>
-            <label class="block mb-2 text-base font-semibold text-slate-700">Ghi chú</label>
-            <textarea name="notes" rows="3"
-                      class="block w-full px-4 py-3 text-base text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"></textarea>
           </div>
         </div>
       </div>
@@ -119,4 +103,41 @@
     </form>
   </div>
 </div>
+
+<script>
+  // Tính tuần kiểu %W (Thứ Hai là đầu tuần, tuần 00..53) từ ngày yyyy-mm-dd
+  function weekW(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    // tìm Monday >= Jan 1
+    const jan1DowMon0 = (jan1.getUTCDay() + 6) % 7; // Mon=0..Sun=6
+    const firstMonday = new Date(jan1);
+    if (jan1DowMon0 !== 0) firstMonday.setUTCDate(jan1.getUTCDate() + (7 - jan1DowMon0));
+
+    // Monday của ngày d
+    const dDowMon0 = (d.getUTCDay() + 6) % 7;
+    const monday = new Date(d);
+    monday.setUTCDate(d.getUTCDate() - dDowMon0);
+
+    if (monday < firstMonday) return 0; // tuần 00
+    const diffDays = Math.floor((monday - firstMonday) / 86400000);
+    return Math.floor(diffDays / 7) + 1; // 01..53
+  }
+
+  const dateInp = document.getElementById('add-creation-date');
+  const weekInp = document.getElementById('add-week');
+  const yearInp = document.getElementById('add-year');
+
+  function fillWeekYear(){
+    if (!dateInp.value) { weekInp.value = ''; yearInp.value=''; return; }
+    const d = new Date(dateInp.value + 'T00:00:00Z');
+    if (isNaN(d)) { weekInp.value = ''; yearInp.value = ''; return; }
+    const w = weekW(d);
+    weekInp.value = w;
+    yearInp.value = d.getUTCFullYear();
+  }
+
+  dateInp.addEventListener('change', fillWeekYear);
+  window.addEventListener('load', fillWeekYear);
+</script>
 

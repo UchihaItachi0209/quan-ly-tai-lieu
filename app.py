@@ -13,6 +13,9 @@ from werkzeug.utils import secure_filename
 import docx
 import fitz  # PyMuPDF
 
+from datetime import datetime
+
+
 
 # =========================
 # CẤU HÌNH ỨNG DỤNG
@@ -25,7 +28,65 @@ app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__fil
 for folder in [app.instance_path, app.config['UPLOAD_FOLDER']]:
     os.makedirs(folder, exist_ok=True)
 
+# --- BẢO ĐẢM LƯỢC ĐỒ (thêm cột nếu chưa có) ---
+def ensure_schema():
+    db = get_db()
+    cols = [r[1] for r in db.execute("PRAGMA table_info(documents)").fetchall()]
+    changed = False
+    if 'week_number' not in cols:
+        db.execute("ALTER TABLE documents ADD COLUMN week_number INTEGER")
+        changed = True
+    if 'year_number' not in cols:
+        db.execute("ALTER TABLE documents ADD COLUMN year_number INTEGER")
+        changed = True
+    if 'notes' not in cols:
+        db.execute("ALTER TABLE documents ADD COLUMN notes TEXT")
+        changed = True
+    if changed:
+        db.commit()
 
+@app.before_request
+def _ensure_schema_on_every_request():
+    # Nhẹ, chỉ chạy ALTER khi thiếu cột
+    ensure_schema()
+    
+def _parse_dt(s):
+    if not s:
+        return None
+    s = str(s).strip()
+    s = s.replace('T', ' ').replace('Z', '')
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(s)
+    except Exception:
+        return None
+
+@app.template_filter('vn_date')
+def vn_date(s):
+    """Hiển thị dd/mm/yyyy hoặc dd/mm/yyyy HH:MM (24h)."""
+    dt = _parse_dt(s)
+    if not dt:
+        return s or ""
+    # nếu không có phần giờ trong nguồn (chỉ có ngày)
+    has_time = not (dt.hour == 0 and dt.minute == 0 and dt.second == 0 and (" " not in str(s)))
+    return dt.strftime("%d/%m/%Y %H:%M") if has_time else dt.strftime("%d/%m/%Y")
+
+@app.template_filter('ymd')
+def ymd(s):
+    """Chuẩn hóa về YYYY-MM-DD cho Flatpickr date."""
+    dt = _parse_dt(s)
+    return dt.strftime("%Y-%m-%d") if dt else (s or "")
+
+@app.template_filter('ymd_hm')
+def ymd_hm(s):
+    """Chuẩn hóa về YYYY-MM-DD HH:MM cho Flatpickr datetime."""
+    dt = _parse_dt(s)
+    return dt.strftime("%Y-%m-%d %H:%M") if dt else (s or "")
+    
 # =========================
 # TIỆN ÍCH CƠ SỞ DỮ LIỆU
 # =========================
@@ -129,22 +190,116 @@ def get_summary_from_gemini(text):
 @login_required
 def dashboard():
     db = get_db()
+
+    # Stats tổng quan
     stats = {
-        "total":        db.execute('SELECT COUNT(id) FROM documents').fetchone()[0],
-        "processing":   db.execute("SELECT COUNT(id) FROM documents WHERE status = 'Đang xử lý'").fetchone()[0],
-        "completed":    db.execute("SELECT COUNT(id) FROM documents WHERE status = 'Đã xử lý'").fetchone()[0],
-        "unassigned":   db.execute("SELECT COUNT(id) FROM documents WHERE status = 'Chưa xử lý'").fetchone()[0],
+        "total": db.execute('SELECT COUNT(id) FROM documents').fetchone()[0],
+        "processing": db.execute("SELECT COUNT(id) FROM documents WHERE status = 'Đang xử lý'").fetchone()[0],
+        "completed": db.execute("SELECT COUNT(id) FROM documents WHERE status = 'Đã xử lý'").fetchone()[0],
+        "unassigned": db.execute("SELECT COUNT(id) FROM documents WHERE status = 'Chưa xử lý'").fetchone()[0]
     }
-    documents_rows = db.execute("""
-        SELECT d.*, u_handler.full_name as handler_name
+
+    # ---- Lọc / tìm kiếm / phân trang ----
+    args = request.args
+    q = (args.get('q') or '').strip()                   # tìm theo Tiêu đề
+    country = (args.get('country') or '').strip()       # Hướng (quốc gia)
+    status = (args.get('status') or '').strip()         # Trạng thái
+    week_raw = (args.get('week') or '').strip()         # Tuần (00-53)
+    year_raw = (args.get('year') or '').strip()         # Năm (YYYY)
+
+    # Chuẩn hoá week (2 chữ số, 00..53) & year (4 chữ số)
+    week = ''
+    if week_raw != '':
+        try:
+            week = f"{int(week_raw):02d}"
+        except ValueError:
+            week = ''
+    year = ''
+    if year_raw != '':
+        try:
+            year = f"{int(year_raw):04d}"
+        except ValueError:
+            year = ''
+
+    # page size
+    try:
+        page_size = int(args.get('page_size', 10))
+    except ValueError:
+        page_size = 10
+    if page_size not in [5, 10, 20, 50, 100]:
+        page_size = 10
+
+    # current page
+    try:
+        page = int(args.get('page', 1))
+    except ValueError:
+        page = 1
+    if page < 1:
+        page = 1
+
+    # WHERE linh hoạt
+    conditions, params = [], []
+    if q:
+        conditions.append("d.title LIKE ?")
+        params.append(f"%{q}%")
+    if country:
+        conditions.append("d.country LIKE ?")
+        params.append(f"%{country}%")
+    if status:
+        conditions.append("d.status = ?")
+        params.append(status)
+    if week:
+        # Tuần theo SQLite: %W (Mon-first, 00..53)
+        conditions.append("strftime('%W', d.creation_date) = ?")
+        params.append(week)
+    if year:
+        conditions.append("strftime('%Y', d.creation_date) = ?")
+        params.append(year)
+
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+    # Đếm & phân trang
+    total_filtered = db.execute(
+        f"SELECT COUNT(d.id) FROM documents d {where_clause}",
+        params
+    ).fetchone()[0]
+    total_pages = max((total_filtered + page_size - 1) // page_size, 1)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * page_size
+
+    # Lấy danh sách
+    rows = db.execute(f"""
+        SELECT d.*, u_handler.full_name AS handler_name
         FROM documents d
         LEFT JOIN users u_handler ON d.handler_id = u_handler.id
+        {where_clause}
         ORDER BY d.created_at DESC
-    """).fetchall()
-    documents = make_dicts(documents_rows)
+        LIMIT ? OFFSET ?
+    """, (*params, page_size, offset)).fetchall()
+
+    documents = make_dicts(rows)
     users = make_dicts(db.execute("SELECT id, full_name FROM users ORDER BY full_name").fetchall())
-    return render_template('index.html', stats=stats, documents=documents, users=users,
-                           current_user=session, active_page='dashboard')
+
+    filters = {
+        "q": q, "country": country, "status": status,
+        "week": week, "year": year, "page_size": page_size
+    }
+
+    return render_template(
+        'index.html',
+        stats=stats,
+        documents=documents,
+        users=users,
+        current_user=session,
+        active_page='dashboard',
+        total_filtered=total_filtered,
+        total_pages=total_pages,
+        page=page,
+        filters=filters
+    )
+
+
 
 
 @app.route('/users')
@@ -215,44 +370,79 @@ def serve_upload(filename):
 def add_document():
     db = get_db()
     data = request.form
-    original_file = request.files.get('original_file')
-    translated_file = request.files.get('translated_file')
+
+    # === Trường chính ===
+    title = data['title']
+    authoring_agency = data.get('authoring_agency')
+    country = data.get('country')
+    draft_time = data.get('creation_date')  # NHÃN hiển thị là "Thời gian soạn thảo"
+    source_type = data.get('source_type')
+    confidentiality_level = data.get('confidentiality_level')
+    urgency_level = data.get('urgency_level')
+
+    # Tuần/Năm tách rời, không liên quan ngày
+    week_number = data.get('week_number') or None
+    year_number = data.get('year_number') or None
 
     handler_id = data.get('handler_id')
     status = 'Đang xử lý' if handler_id and handler_id != "null" else 'Chưa xử lý'
 
-    original_filepath, translated_filepath = None, None
-    original_text, translated_text, summary = "", "", ""
+    # === File upload (không bắt buộc, chấp nhận mọi loại; chỉ đọc text nếu pdf/docx) ===
+    original_file = request.files.get('original_file')
+    translated_file = request.files.get('translated_file')
 
-    if original_file and original_file.filename:
-        fname = unique_secure_filename(original_file.filename)
-        original_filepath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-        original_file.save(original_filepath)
-        original_text = read_text_from_file(original_filepath)
+    original_filepath = None
+    translated_filepath = None
+    original_text, translated_text = "", ""
 
-    if translated_file and translated_file.filename:
-        fname = unique_secure_filename(translated_file.filename)
-        translated_filepath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-        translated_file.save(translated_filepath)
-        translated_text = read_text_from_file(translated_filepath)
-        summary = get_summary_from_gemini(translated_text)
+    def save_and_maybe_extract(file_storage):
+        if not file_storage or file_storage.filename == '':
+            return None, ""
+        safe_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file_storage.filename))
+        file_storage.save(safe_path)
+        # Chỉ trích xuất text với PDF/DOCX
+        lower = safe_path.lower()
+        if lower.endswith('.pdf') or lower.endswith('.docx'):
+            try:
+                return safe_path, read_text_from_file(safe_path)
+            except Exception:
+                return safe_path, ""
+        return safe_path, ""
 
-    db.execute("""
+    original_filepath, original_text = save_and_maybe_extract(original_file)
+    translated_filepath, translated_text = save_and_maybe_extract(translated_file)
+
+    # “Nội dung chính” & “Ghi chú” (không bắt buộc)
+    main_content = data.get('main_content') or ""
+    notes = data.get('notes') or ""
+
+    # Nếu chưa nhập “Nội dung chính” mà có bản dịch → tóm tắt tạm
+    main_content_summary = main_content.strip() or get_summary_from_gemini(translated_text)
+
+    db.execute(
+        """
         INSERT INTO documents (
-            title, authoring_agency, country, creation_date, source_type,
-            confidentiality_level, urgency_level, original_file_path,
-            translated_file_path, original_text, translated_text, main_content_summary,
-            handler_id, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        data['title'], data['authoring_agency'], data['country'], data['creation_date'],
-        data['source_type'], data['confidentiality_level'], data['urgency_level'],
-        original_filepath, translated_filepath, original_text, translated_text, summary,
-        handler_id if handler_id != "null" else None, status
-    ))
+            title, authoring_agency, country, creation_date,
+            source_type, confidentiality_level, urgency_level,
+            original_file_path, translated_file_path,
+            original_text, translated_text, main_content_summary,
+            handler_id, status, week_number, year_number, notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            title, authoring_agency, country, draft_time,
+            source_type, confidentiality_level, urgency_level,
+            original_filepath, translated_filepath,
+            original_text, translated_text, main_content_summary,
+            (handler_id if handler_id and handler_id != "null" else None),
+            status, week_number, year_number, notes
+        )
+    )
     db.commit()
     flash('Thêm tài liệu mới thành công!', 'success')
     return redirect(url_for('dashboard'))
+
 
 
 @app.route('/documents/<int:doc_id>/edit', methods=['POST'])
@@ -262,82 +452,30 @@ def edit_document(doc_id):
         flash('Bạn không có quyền.', 'error')
         return redirect(url_for('dashboard'))
 
+    data = request.form
     db = get_db()
-    cur = db.execute("""
-        SELECT original_file_path, translated_file_path
-        FROM documents WHERE id = ?
-    """, (doc_id,)).fetchone()
-    if not cur:
-        flash('Không tìm thấy tài liệu.', 'error')
-        return redirect(url_for('dashboard'))
+    handler_id = data.get('handler_id') if data.get('handler_id') != 'null' else None
+    status = data.get('status')
+    completion_time = data.get('completion_time') or None  # định dạng "YYYY-MM-DD HH:MM" từ flatpickr
+    main_content = data.get('main_content') or None
+    notes = data.get('notes') or None
 
-    form = request.form
-    files = request.files
-
-    handler_id = form.get('handler_id') if form.get('handler_id') != 'null' else None
-    status = form.get('status')
-
-    original_path = cur['original_file_path']
-    translated_path = cur['translated_file_path']
-
-    original_text = None
-    translated_text = None
-    summary = None
-
-    # ORIGINAL
-    if form.get('remove_original') == '1':
-        delete_file_safe(original_path)
-        original_path = None
-        original_text = ""
-
-    new_orig = files.get('original_file')
-    if new_orig and new_orig.filename:
-        fname = unique_secure_filename(new_orig.filename)
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-        new_orig.save(save_path)
-        original_path = save_path
-        original_text = read_text_from_file(save_path)
-
-    # TRANSLATED
-    if form.get('remove_translated') == '1':
-        delete_file_safe(translated_path)
-        translated_path = None
-        translated_text = ""
-        summary = ""
-
-    new_tr = files.get('translated_file')
-    if new_tr and new_tr.filename:
-        fname = unique_secure_filename(new_tr.filename)
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-        new_tr.save(save_path)
-        translated_path = save_path
-        translated_text = read_text_from_file(save_path)
-        summary = get_summary_from_gemini(translated_text)
-
-    # UPDATE
-    db.execute("""
-        UPDATE documents SET
-            title = ?, authoring_agency = ?, country = ?, creation_date = ?,
-            source_type = ?, confidentiality_level = ?, urgency_level = ?,
-            handler_id = ?, status = ?,
-            original_file_path = ?, translated_file_path = ?,
-            original_text = COALESCE(?, original_text),
-            translated_text = COALESCE(?, translated_text),
-            main_content_summary = COALESCE(?, main_content_summary)
-        WHERE id = ?
-    """, (
-        form['title'], form['authoring_agency'], form['country'], form['creation_date'],
-        form['source_type'], form['confidentiality_level'], form['urgency_level'],
-        handler_id, status,
-        original_path, translated_path,
-        original_text, translated_text, summary,
-        doc_id
-    ))
+    db.execute(
+        """UPDATE documents SET 
+           title = ?, authoring_agency = ?, country = ?, creation_date = ?, 
+           source_type = ?, confidentiality_level = ?, urgency_level = ?, 
+           handler_id = ?, status = ?, completion_time = ?, 
+           main_content_summary = ?, notes = ?
+           WHERE id = ?""",
+        (data['title'], data['authoring_agency'], data['country'], data['creation_date'],
+         data['source_type'], data['confidentiality_level'], data['urgency_level'],
+         handler_id, status, completion_time, main_content, notes, doc_id)
+    )
     db.commit()
-
     flash('Cập nhật thông tin tài liệu thành công!', 'success')
-    # ✅ Sau khi lưu, chuyển về chế độ XEM (không còn ?edit=true)
-    return redirect(url_for('view_document', doc_id=doc_id))  # trở lại chế độ sửa để thấy ngay file mới
+    return redirect(url_for('view_document', doc_id=doc_id))  # quay về chế độ xem
+
+
 
 
 @app.route('/documents/<int:doc_id>/delete', methods=['POST'])
