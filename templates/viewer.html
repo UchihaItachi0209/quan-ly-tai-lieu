@@ -41,11 +41,11 @@
     </div>
   </div>
 
-  <!-- Lưới 5 cột: Trái span-2, phải span-3. Thiết lập 2 hàng cho phần phải để căn đáy với Nội dung chính -->
+  <!-- Lưới 5 cột: Trái span-2, phải span-3. Trái span 2 hàng để khớp mép với Nội dung chính -->
   <div class="grid gap-6 lg:grid-cols-5">
-    <!-- Thông tin chung: span 2 cột + span 2 hàng để đáy khớp với “Nội dung chính” -->
-    <div class="lg:col-span-2 lg:row-span-2 space-y-6">
-      <div class="rounded-lg border bg-white shadow-sm h-full">
+    <!-- THÔNG TIN CHUNG -->
+    <div class="lg:col-span-2 lg:row-span-2 space-y-6" id="colLeft">
+      <div class="rounded-lg border bg-white shadow-sm h-full" id="boxInfo">
         <div class="px-6 py-4"><h3 class="font-semibold text-xl">Thông tin chung</h3></div>
         <div class="border-t text-base">
           {% if edit_mode %}
@@ -137,9 +137,9 @@
       </div>
     </div>
 
-    <!-- Hàng 1 bên phải: 2 khối tệp cạnh nhau -->
-    <div class="lg:col-span-3">
-      <div class="grid gap-6 md:grid-cols-2">
+    <!-- HÀNG 1 BÊN PHẢI: 2 KHỐI FILE -->
+    <div class="lg:col-span-3" id="colRightTop">
+      <div class="grid gap-6 md:grid-cols-2" id="boxFiles">
         {% set img_exts = ['jpg','jpeg','png','gif','webp','bmp'] %}
         {% set doc_exts = ['doc','docx','odt','rtf'] %}
         {% set txt_exts = ['txt','csv','json','md','log'] %}
@@ -166,7 +166,6 @@
                 </div>
                 <h3 class="font-semibold text-lg">{{ section_title }}</h3>
               </div>
-
               <div class="flex items-center gap-2">
                 {% if not edit_mode and filename %}
                 <button type="button"
@@ -193,26 +192,13 @@
                 <div id="holder_{{ input_name }}" class="space-y-3">
                   {% if filename %}
                   <div id="row_{{ input_name }}_current" class="flex items-center justify-between p-3 rounded-lg border bg-slate-50">
-                    <div class="text-sm text-slate-600 italic">Đã có tệp. Bạn có thể xem hoặc xóa, hay tải tệp mới để thay thế.</div>
+                    <div class="text-sm text-slate-600 italic">Đã có tệp. Bạn có thể xem/xóa hoặc tải tệp mới để thay thế.</div>
                     <div class="flex items-center gap-2">
-                      <button type="button"
-                              class="inline-flex items-center justify-center w-9 h-9 rounded-md text-white bg-sky-600 hover:bg-sky-700"
-                              data-view-file="{{ url_for('serve_upload', filename=filename) }}"
-                              data-file-ext="{{ ext }}"
-                              data-title="{{ section_title }}"
-                              title="Xem">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                      </button>
-                      <button type="button"
-                              class="inline-flex items-center justify-center w-9 h-9 rounded-md text-white bg-red-600 hover:bg-red-700"
-                              data-delete-file
-                              data-remove-input="remove_{{ input_name }}"
-                              data-row-id="row_{{ input_name }}_current"
-                              data-file-label="{{ filename }}"
-                              data-file-input="fileinput_{{ input_name }}"
-                              title="Xóa">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                      </button>
+                      <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-md text-white bg-sky-600 hover:bg-sky-700"
+                              data-view-file="{{ url_for('serve_upload', filename=filename) }}" data-file-ext="{{ ext }}" data-title="{{ section_title }}" title="Xem"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                      <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-md text-white bg-red-600 hover:bg-red-700"
+                              data-delete-file data-remove-input="remove_{{ input_name }}" data-row-id="row_{{ input_name }}_current"
+                              data-file-label="{{ filename }}" data-file-input="fileinput_{{ input_name }}" title="Xóa"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
                   </div>
                   {% else %}
@@ -224,7 +210,6 @@
                   <label class="block text-sm font-medium text-slate-600 mb-1">Chọn tệp mới (tùy chọn — hỗ trợ .zip, .rar, .pdf, .docx, .txt, …)</label>
                   <input type="file" id="fileinput_{{ input_name }}" name="{{ input_name }}_file"
                          class="block w-full text-sm file:mr-4 file:py-2.5 file:px-3 file:rounded-md file:border-0 file:bg-slate-800 file:text-white hover:file:bg-slate-700">
-                  <p class="text-xs text-slate-500 mt-1">Có thể xem trước ngay sau khi chọn.</p>
                 </div>
               </div>
               {% else %}
@@ -245,24 +230,38 @@
       </div>
     </div>
 
-    <!-- Hàng 2 bên phải: Nội dung chính -->
-    <div class="lg:col-span-3">
-      <div class="rounded-lg border bg-white shadow-sm">
-        <div class="px-6 py-4"><h3 class="font-semibold text-xl">Nội dung chính</h3></div>
+    <!-- HÀNG 2 BÊN PHẢI: NỘI DUNG CHÍNH -->
+    <div class="lg:col-span-3" id="colRightBottom">
+      <div class="rounded-lg border bg-white shadow-sm h-full" id="boxMain">
+        <div class="px-6 py-4 flex items-center justify-between">
+          <h3 class="font-semibold text-xl">Nội dung chính</h3>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnCopyMain"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-md border text-slate-700 hover:bg-slate-50"
+                    title="Copy nội dung">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+            <button type="button" id="btnGenMain"
+                    class="inline-flex items-center justify-center px-3 h-9 rounded-md text-white bg-sky-600 hover:bg-sky-700 text-sm"
+                    title="Generate (Gemini)">
+              Generate
+            </button>
+          </div>
+        </div>
         <div class="border-t p-6">
           {% if edit_mode %}
-          <textarea name="main_content" rows="6"
+          <textarea name="main_content" id="mainContentTA" rows="6"
                     class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 resize-y">{{ doc.main_content_summary or '' }}</textarea>
           {% else %}
-          <div class="prose max-w-none text-slate-800 whitespace-pre-wrap">{{ doc.main_content_summary or '—' }}</div>
+          <div id="mainContentView" class="prose max-w-none text-slate-800 whitespace-pre-wrap">{{ doc.main_content_summary or '—' }}</div>
           {% endif %}
         </div>
       </div>
     </div>
 
-    <!-- Hàng 3: Trạng thái & Xử lý (trái) + Ghi chú (phải) -->
+    <!-- HÀNG 3: TRẠNG THÁI & XỬ LÝ + GHI CHÚ (cùng hàng, mép khớp) -->
     <div class="lg:col-span-2">
-      <div class="rounded-lg border bg-white shadow-sm">
+      <div class="rounded-lg border bg-white shadow-sm h-full">
         <div class="px-6 py-4"><h3 class="font-semibold text-xl">Trạng thái & Xử lý</h3></div>
         <div class="border-t text-base">
           {% if edit_mode %}
@@ -292,12 +291,13 @@
               </div>
             </div>
 
-            <!-- Thời gian giao (readonly) -->
+            <!-- Thời gian giao (EDITABLE) -->
             <div class="px-6 py-3 grid grid-cols-12 items-center gap-4">
               <label class="col-span-4 text-sm text-slate-600">Thời gian giao</label>
               <div class="col-span-8">
-                <input type="text" value="{{ doc.created_at|vn_date or '—' }}" readonly
-                       class="w-full h-11 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 cursor-not-allowed">
+                <input type="text" id="assigned_time" name="assigned_time"
+                       value="{{ doc.created_at|ymd_hm }}"
+                       class="w-full h-11 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
               </div>
             </div>
 
@@ -335,23 +335,12 @@
             </div>
           </dl>
           {% endif %}
-
-          {% if current_user.user_id == doc.handler_id and doc.status == 'Đang xử lý' and not edit_mode %}
-          <div class="px-6 py-5 border-t">
-            <button type="submit"
-                    formmethod="POST"
-                    formaction="{{ url_for('report_document', doc_id=doc.id) }}"
-                    class="w-full inline-flex items-center justify-center px-4 py-2 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
-              <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Báo cáo Hoàn thành
-            </button>
-          </div>
-          {% endif %}
         </div>
       </div>
     </div>
 
     <div class="lg:col-span-3">
-      <div class="rounded-lg border bg-white shadow-sm">
+      <div class="rounded-lg border bg-white shadow-sm h-full">
         <div class="px-6 py-4"><h3 class="font-semibold text-xl">Ghi chú</h3></div>
         <div class="border-t p-6">
           {% if edit_mode %}
@@ -366,7 +355,7 @@
   </div>
 </form>
 
-<!-- Modal xem file -->
+<!-- Viewer modal -->
 <div id="fileViewerModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
   <div class="absolute inset-0 bg-black/50" data-close-viewer></div>
   <div class="relative z-10 w-[95vw] max-w-5xl bg-white rounded-xl shadow-xl">
@@ -387,7 +376,7 @@
   </div>
 </div>
 
-<!-- Modal xác nhận xóa -->
+<!-- Confirm delete modal -->
 <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
   <div class="absolute inset-0 bg-black/50" data-close-confirm></div>
   <div class="relative z-10 w-[92vw] max-w-md bg-white rounded-xl shadow-xl">
@@ -407,14 +396,14 @@
 
 <script>
 (function () {
-  // Tự giãn textarea
+  // ===== Auto-grow textarea =====
   document.querySelectorAll('textarea[data-autogrow]').forEach(t=>{
     const fit=()=>{ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; };
     ['input','change'].forEach(ev=>t.addEventListener(ev,fit));
     fit();
   });
 
-  // Modal xem tệp
+  // ===== Viewer modal =====
   const viewer = document.getElementById('fileViewerModal');
   const vTitle = document.getElementById('viewerTitle');
   const vBody  = document.getElementById('viewerBody');
@@ -448,7 +437,7 @@
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeViewer(); closeConfirm(); } });
   viewer.querySelectorAll('[data-close-viewer]').forEach(el => el.addEventListener('click', closeViewer));
 
-  // Modal xác nhận xóa
+  // ===== Confirm delete =====
   const confirmModal = document.getElementById('confirmDeleteModal');
   const confirmText  = document.getElementById('confirmDeleteText');
   const confirmBtn   = document.getElementById('confirmDeleteBtn');
@@ -486,7 +475,7 @@
     closeConfirm();
   });
 
-  // Xem trước file mới
+  // ===== Xem trước file mới =====
   const imgExts = ['jpg','jpeg','png','gif','webp','bmp'];
   const txtExts = ['txt','csv','json','md','log'];
   const iconForExt = (e)=> imgExts.includes(e)?'image':(e==='pdf'?'file':(txtExts.includes(e)||['doc','docx','odt','rtf'].includes(e)?'file-text':'file'));
@@ -502,7 +491,6 @@
       const file = input.files && input.files[0];
       if(!file){ return; }
       const ext = (file.name.split('.').pop() || '').toLowerCase();
-      const icon = iconForExt(ext);
       const url  = URL.createObjectURL(file);
 
       holder.querySelectorAll('.__temp').forEach(n=>n.remove());
@@ -512,12 +500,8 @@
         <div class="text-sm text-slate-600">Đã chọn: <b title="${file.name}">${file.name}</b></div>
         <div class="flex items-center gap-2">
           <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-md text-white bg-sky-600 hover:bg-sky-700"
-                  data-temp-view data-url="${url}" data-ext="${ext}" data-title="${title}" title="Xem">
-            <i data-lucide="eye" class="w-4 h-4"></i>
-          </button>
-          <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-md text-slate-700 border hover:bg-slate-50" data-temp-clear title="Bỏ chọn">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
+                  data-temp-view data-url="${url}" data-ext="${ext}" data-title="${title}" title="Xem"><i data-lucide="eye" class="w-4 h-4"></i></button>
+          <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-md text-slate-700 border hover:bg-slate-50" data-temp-clear title="Bỏ chọn"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>`;
       holder.prepend(div);
       if (window.lucide) window.lucide.createIcons();
@@ -539,23 +523,52 @@
   wireInput('original');
   wireInput('translated');
 
-  // Flatpickr cho ngày/giờ (24h, định dạng VN)
+  // ===== Copy Nội dung chính =====
+  const copyBtn = document.getElementById('btnCopyMain');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      let text = '';
+      const ta = document.getElementById('mainContentTA');
+      if (ta) text = ta.value; else {
+        const v = document.getElementById('mainContentView');
+        text = v ? v.innerText : '';
+      }
+      navigator.clipboard.writeText(text || '').then(()=>{
+        copyBtn.classList.add('ring-2','ring-green-400');
+        setTimeout(()=>copyBtn.classList.remove('ring-2','ring-green-400'),700);
+      });
+    });
+  }
+
+  // ===== Căn mép dưới: ở CHẾ ĐỘ XEM, set min-height cho Nội dung chính =====
+  function syncHeights(){
+    const isView = {{ 'false' if edit_mode else 'true' }};
+    if (!isView) return;
+    const info  = document.getElementById('boxInfo');
+    const files = document.getElementById('boxFiles');
+    const main  = document.getElementById('boxMain');
+    if (info && files && main) {
+      const gap = 24; // grid gap-6 ~ 1.5rem
+      const h = info.offsetHeight - files.offsetHeight - gap;
+      if (h > 0) main.style.minHeight = h + 'px';
+    }
+  }
+  window.addEventListener('load',  syncHeights);
+  window.addEventListener('resize', syncHeights);
+
+  // ===== Flatpickr (24h, VN) =====
   if (typeof flatpickr !== "undefined") {
     flatpickr("#creation_date", {
-      allowInput: true,
-      altInput: true,
-      altFormat: "d/m/Y",
-      dateFormat: "Y-m-d",
+      allowInput: true, altInput: true, altFormat: "d/m/Y", dateFormat: "Y-m-d", locale: flatpickr.l10ns.vn
+    });
+    flatpickr("#assigned_time", {
+      enableTime: true, time_24hr: true, minuteIncrement: 1,
+      allowInput: true, altInput: true, altFormat: "d/m/Y H:i", dateFormat: "Y-m-d H:i",
       locale: flatpickr.l10ns.vn
     });
     flatpickr("#completion_time", {
-      enableTime: true,
-      time_24hr: true,
-      minuteIncrement: 1,
-      allowInput: true,
-      altInput: true,
-      altFormat: "d/m/Y H:i",
-      dateFormat: "Y-m-d H:i",
+      enableTime: true, time_24hr: true, minuteIncrement: 1,
+      allowInput: true, altInput: true, altFormat: "d/m/Y H:i", dateFormat: "Y-m-d H:i",
       locale: flatpickr.l10ns.vn
     });
   }
