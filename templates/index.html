@@ -4,27 +4,13 @@
 {% block content %}
 <style>
   html, body { overflow-x: hidden; }
-
-  /* Khối bảng: ~10 hàng + header, cuộn ngang/dọc */
-  #doc-table-scroll{
-    --row-h:56px; --head-h:52px;
-    max-height:calc(var(--head-h) + 10 * var(--row-h));
-    overflow:auto;
-    overscroll-behavior:contain;
-    scrollbar-gutter:stable both-edges;
-  }
+  #doc-table-scroll{ --row-h:56px; --head-h:52px; max-height:calc(var(--head-h) + 10 * var(--row-h)); overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable both-edges;}
   #doc-table-scroll::-webkit-scrollbar{height:12px;width:12px;}
   #doc-table-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9999px;}
   #doc-table-scroll::-webkit-scrollbar-track{background:#f1f5f9;}
-
-  .title-2lines{
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-    overflow:hidden; word-break:break-word; line-height:1.25;
-  }
-
-  /* Căn giữa tất cả ô dữ liệu, trừ cột Tiêu đề (cột 2) */
-  #doc-table-scroll tbody td{ text-align:center; vertical-align:middle; }
-  #doc-table-scroll tbody td:nth-child(2){ text-align:left; }
+  .title-2lines{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;line-height:1.25;}
+  #doc-table-scroll tbody td{text-align:center;vertical-align:middle}
+  #doc-table-scroll tbody td:nth-child(2){text-align:left}
 </style>
 
 <!-- THỐNG KÊ -->
@@ -52,7 +38,7 @@
         <h3 class="font-semibold text-slate-800">Chưa xử lý</h3>
       </div>
     </div>
-    <div class="px-5 py-5 text-4xl font-bold text-rose-600">{{ stats.unassigned if stats else 0 }}</div>
+    <div class="px-5 py-5 text-4xl font-bold text-rose-600">{{ stats.processing if stats else 0 }}</div>
   </div>
 
   <!-- Đang xử lý -->
@@ -65,7 +51,7 @@
         <h3 class="font-semibold text-slate-800">Đang xử lý</h3>
       </div>
     </div>
-    <div class="px-5 py-5 text-4xl font-bold text-amber-600">{{ stats.processing if stats else 0 }}</div>
+    <div class="px-5 py-5 text-4xl font-bold text-amber-600">{{ stats.processing_on if stats else 0 }}</div>
   </div>
 
   <!-- Đã xử lý -->
@@ -81,7 +67,6 @@
     <div class="px-5 py-5 text-4xl font-bold text-emerald-600">{{ stats.completed if stats else 0 }}</div>
   </div>
 </div>
-
 
 <!-- Danh sách + Bộ lọc -->
 <div class="rounded-lg border bg-white shadow-sm mt-4">
@@ -99,8 +84,8 @@
   <!-- Bộ lọc -->
   <div class="px-6 pb-4">
     <form id="filter-form" method="GET" action="{{ url_for('dashboard') }}"
-          class="grid gap-3 lg:grid-cols-6 items-end">
-      <!-- Xem N mục -->
+          class="grid gap-3 lg:grid-cols-9 items-end">
+      <!-- Xem N -->
       <div class="flex flex-col">
         <label class="text-xs text-slate-500 mb-1">Xem</label>
         <select name="page_size" class="border rounded-md px-3 py-2">
@@ -147,15 +132,27 @@
                class="border rounded-md px-3 py-2">
       </div>
 
+      <!-- Người xử lý -->
+      <div class="flex flex-col">
+        <label class="text-xs text-slate-500 mb-1">Người xử lý</label>
+        <select name="handler_id" class="border rounded-md px-3 py-2">
+          <option value="" {% if not filters.handler_id %}selected{% endif %}>Tất cả</option>
+          <option value="null" {% if filters.handler_id=='null' %}selected{% endif %}>— Chưa giao —</option>
+          {% for u in users %}
+            <option value="{{ u.id }}" {% if (filters.handler_id|string)==(u.id|string) %}selected{% endif %}>{{ u.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       <!-- Tìm theo Tiêu đề -->
-      <div class="flex flex-col lg:col-span-2">
+      <div class="lg:col-span-2 flex flex-col">
         <label class="text-xs text-slate-500 mb-1">Tìm theo Tiêu đề</label>
         <input type="text" name="q" value="{{ filters.q }}" placeholder="Nhập tiêu đề để tìm..."
                class="border rounded-md px-3 py-2">
       </div>
 
-      <!-- Nút -->
-      <div class="flex gap-2 lg:col-span-6">
+      <!-- Nút bên phải (1 dòng) -->
+      <div class="flex justify-end items-end whitespace-nowrap gap-2">
         <input type="hidden" name="page" value="{{ page }}">
         <button class="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700">Lọc/Tìm</button>
         <a href="{{ url_for('dashboard') }}"
@@ -264,13 +261,13 @@
         {% set f = filters %}
         {% set prev_page = 1 if page <= 1 else page - 1 %}
         {% set next_page = total_pages if page >= total_pages else page + 1 %}
-        <a href="{{ url_for('dashboard', q=f.q, country=f.country, status=f.status, week=f.week, year=f.year, page_size=f.page_size, page=prev_page) }}"
+        <a href="{{ url_for('dashboard', q=f.q, country=f.country, status=f.status, week=f.week, year=f.year, handler_id=f.handler_id, page_size=f.page_size, page=prev_page) }}"
            class="px-3 py-1 rounded-md border bg-white hover:bg-slate-50">Trước</a>
         {% for p in range(1, total_pages + 1) %}
-          <a href="{{ url_for('dashboard', q=f.q, country=f.country, status=f.status, week=f.week, year=f.year, page_size=f.page_size, page=p) }}"
+          <a href="{{ url_for('dashboard', q=f.q, country=f.country, status=f.status, week=f.week, year=f.year, handler_id=f.handler_id, page_size=f.page_size, page=p) }}"
              class="px-3 py-1 rounded-md border {{ 'bg-slate-900 text-white' if p==page else 'bg-white hover:bg-slate-50' }}">{{ p }}</a>
         {% endfor %}
-        <a href="{{ url_for('dashboard', q=f.q, country=f.country, status=f.status, week=f.week, year=f.year, page_size=f.page_size, page=next_page) }}"
+        <a href="{{ url_for('dashboard', q=f.q, country=f.country, status=f.status, week=f.week, year=f.year, handler_id=f.handler_id, page_size=f.page_size, page=next_page) }}"
            class="px-3 py-1 rounded-md border bg-white hover:bg-slate-50">Sau</a>
       </div>
     </div>

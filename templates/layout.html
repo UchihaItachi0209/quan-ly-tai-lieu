@@ -3,87 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Dashboard{% endblock %} - Hệ thống trinh sát, tác chiến mạng chuyên sâu</title>
+  <title>{% block title %}Dashboard{% endblock %} - Hệ thống TCM chuyên sâu</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
 
   <style>
-    :root { --sidebar-w: 280px; }
-    body { font-family: "Inter", sans-serif; font-size: 16px; }
-
-    /* Lưới chính: đổi độ rộng cột bên trái bằng class .collapsed */
-    #app-grid{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns: var(--sidebar-w) 1fr;
-    }
-    #app-grid.collapsed{ --sidebar-w: 84px; }
-
-    /* ==== Sidebar (xám) ==== */
-    .sidebar{ background:#374151; /* gray-700 */ color:#e5e7eb; /* gray-200 */ }
-    .sidebar .section-title{ letter-spacing:.08em; color:#cbd5e1; } /* slate-300 */
-    .sidebar .nav-item{
-      display:flex; align-items:center; gap:.75rem;
-      padding:.625rem .75rem; border-radius:.5rem;
-      color:#e5e7eb; transition:all .15s ease;
-    }
-    .sidebar .nav-item:hover{ background:#4b5563; color:#fff; }          /* gray-600 */
-    .sidebar .nav-item.active{ background:#4b5563; color:#fff; }
-    .icon-pill{
-      display:inline-grid; place-items:center;
-      width:34px;height:34px;border-radius:9999px;
-    }
-
-    /* Ẩn label khi thu gọn */
-    #sidebar[data-collapsed="true"] .nav-label{ display:none; }
-    #sidebar[data-collapsed="true"] .section-title{ display:none; }
-    #sidebar[data-collapsed="true"] .user-block .meta{ display:none; }
-    #sidebar[data-collapsed="true"] .user-block{ justify-content:center; }
-
-    /* Ẩn sidebar ở màn nhỏ – dùng nút menu để bật/tắt */
-    @media (max-width: 1024px){
-      #app-grid{ grid-template-columns: 1fr; }
-      #sidebar{ display:none; }
-      #sidebar.show{ display:block; position:fixed; inset:0 0 0 0; z-index:60; }
-      #sidebar .panel{ width:280px; height:100%; }
-      #sidebar .overlay{ position:absolute; inset:0; background:rgba(0,0,0,.45); }
+    :root{ --sb-bg:#3a4150; --sb-text:#e5e7eb; --sb-text-dim:#cbd5e1; }
+    body{font-family:'Inter',sans-serif}
+    #app-grid{display:grid;min-height:100vh;grid-template-columns:280px 1fr;}
+    @media (max-width:1023px){ #app-grid{grid-template-columns:1fr;} }
+    .sidebar{background:var(--sb-bg);color:var(--sb-text)}
+    .sidebar[data-collapsed="true"] .nav-label,
+    .sidebar[data-collapsed="true"] .section-title,
+    .sidebar[data-collapsed="true"] .user-block .meta{display:none}
+    .sidebar[data-collapsed="true"]{width:76px}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--sb-text-dim)}
+    .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+    .nav-item.active{background:rgba(255,255,255,.12);color:#fff}
+    .icon-pill{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:999px}
+    header{position:sticky;top:0;z-index:30}
+    @media (max-width:1023px){
+      #sidebar{position:fixed;inset:0 40% 0 0;transform:translateX(-100%);transition:transform .25s}
+      #sidebar[data-open="true"]{transform:none}
+      #sidebar .panel{width:280px;height:100%}
+      #sidebar .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
     }
   </style>
 </head>
-
 <body class="h-full">
 <div id="app-grid">
   <!-- Sidebar -->
   <aside id="sidebar" class="sidebar" data-collapsed="false">
-    <!-- overlay for mobile -->
     <div class="overlay lg:hidden hidden" id="sidebar-overlay"></div>
-
-    <!-- panel -->
     <div class="panel h-full border-r border-gray-600">
-      <!-- top brand + collapse -->
       <div class="h-[60px] flex items-center justify-between px-4 border-b border-gray-600">
         <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 text-white">
-          <!-- Hacker icon -->
-          <span class="icon-pill bg-emerald-500/20 text-emerald-300"><i data-lucide="skull" class="w-5 h-5"></i></span>
-          <span class="nav-label text-[15px] font-semibold">Hệ thống trinh sát, tác chiến mạng chuyên sâu</span>
+          <span class="icon-pill bg-emerald-500/20 text-emerald-300"><i data-lucide="shield" class="w-5 h-5"></i></span>
+          <span class="nav-label text-[15px] font-semibold">Hệ thống TCM chuyên sâu</span>
         </a>
-        <button id="collapse-btn" class="hidden lg:inline-flex p-2 rounded hover:bg-gray-600" title="Thu gọn / Mở rộng">
+        <button id="collapse-btn" class="hidden lg:inline-flex p-2 rounded hover:bg-gray-600" title="Thu gọn/Mở rộng">
           <i data-lucide="panel-left-close" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- user -->
       <div class="px-3 py-3">
         <div class="user-block flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-600/50">
-          <img
-            src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0ea5e9&color=fff&rounded=true&size=64"
-            class="h-9 w-9 rounded-full" alt="avatar">
+          <img src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0ea5e9&color=fff&rounded=true&size=64" class="h-9 w-9 rounded-full" alt="avatar">
           <div class="meta">
             <div class="font-semibold text-white leading-5 text-sm">{{ current_user.user_name }}</div>
             <div class="text-[11px] text-gray-300">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</div>
@@ -91,10 +61,9 @@
         </div>
       </div>
 
-      <!-- nav -->
       <nav class="px-3 pb-4 text-sm font-medium space-y-2">
         <div class="section-title text-xs uppercase px-2 mt-2 mb-1">THỐNG KÊ</div>
-        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_page in ['dashboard','documents'] }}">
+        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_page == 'dashboard' }}">
           <span class="icon-pill bg-sky-500/15 text-sky-300"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span>
           <span class="nav-label">Dashboard</span>
         </a>
@@ -105,11 +74,10 @@
           <span class="nav-label">Quản lý Tài liệu</span>
         </a>
         <a href="{{ url_for('manage_users') }}" class="nav-item {{ 'active' if active_page == 'users' }}">
-          <span class="icon-pill bg-emerald-500/15 text-emerald-300"><i data-lucide="users" class="w-5 h-5"></i></span>
+          <span class="icon-pill bg-teal-500/15 text-teal-300"><i data-lucide="users" class="w-5 h-5"></i></span>
           <span class="nav-label">Quản lý Người dùng</span>
         </a>
 
-        <div class="pt-2 border-t border-gray-600 mt-2"></div>
         <a href="{{ url_for('logout') }}" class="nav-item">
           <span class="icon-pill bg-rose-500/15 text-rose-300"><i data-lucide="log-out" class="w-5 h-5"></i></span>
           <span class="nav-label">Đăng xuất</span>
@@ -120,22 +88,16 @@
 
   <!-- Main -->
   <div class="flex flex-col">
-    <header class="flex h-14 items-center gap-4 border-b bg-white px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
-      <!-- mobile menu -->
-      <button id="menu-button" class="lg:hidden p-2 -ml-2" title="Menu">
-        <i data-lucide="menu" class="w-6 h-6"></i>
-      </button>
-
+    <header class="flex h-14 items-center gap-4 border-b bg-white px-4 lg:h-[60px] lg:px-6">
+      <button id="menu-button" class="lg:hidden p-2 -ml-2"><i data-lucide="menu" class="w-6 h-6"></i></button>
       <div class="w-full flex-1"></div>
-
       <div class="flex items-center gap-4">
         <div class="text-right">
           <p class="font-semibold text-sm text-slate-900">{{ current_user.user_name }}</p>
           <p class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</p>
         </div>
-        <img
-          src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0ea5e9&color=fff&rounded=true&size=40"
-          alt="Avatar" class="rounded-full">
+        <img src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0284c7&color=fff&rounded=true&size=40" class="rounded-full" alt="avatar">
+        <a href="{{ url_for('logout') }}" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"><i data-lucide="log-out" class="w-5 h-5"></i></a>
       </div>
     </header>
 
@@ -143,175 +105,119 @@
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-          <div class="w-full text-base p-3 rounded-md {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-700' }}">
-            {{ message }}
-          </div>
+            <div class="w-full text-base p-3 rounded-md {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-700' }}">{{ message }}</div>
           {% endfor %}
         {% endif %}
       {% endwith %}
-
       {% block content %}{% endblock %}
     </main>
   </div>
 </div>
 
+<!-- Modals -->
 {% include 'modals/add_document.html' %}
 {% include 'modals/add_user.html' %}
 {% include 'modals/view_user.html' %}
 {% include 'modals/edit_user.html' %}
 
 <script>
-  // Render Lucide icons
-  function renderIcons(){ if(window.lucide){ window.lucide.createIcons(); } }
-  renderIcons();
+  lucide.createIcons();
 
-  // --- Sidebar collapse on desktop ---
-  const appGrid   = document.getElementById('app-grid');
-  const sidebar   = document.getElementById('sidebar');
+  // Sidebar open/collapse
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const menuBtn = document.getElementById('menu-button');
   const collapseBtn = document.getElementById('collapse-btn');
+  menuBtn?.addEventListener('click', () => {
+    const isOpen = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', isOpen ? 'false' : 'true');
+    overlay.classList.toggle('hidden', isOpen);
+  });
+  overlay?.addEventListener('click', () => {
+    sidebar.setAttribute('data-open', 'false'); overlay.classList.add('hidden');
+  });
+  collapseBtn?.addEventListener('click', () => {
+    const isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
+    sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+  });
 
-  function setCollapsed(state){
-    const collapsed = !!state;
-    appGrid.classList.toggle('collapsed', collapsed);
-    sidebar.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
-    localStorage.setItem('dh.sidebarCollapsed', collapsed ? '1' : '0');
-    renderIcons();
-  }
-  setCollapsed(localStorage.getItem('dh.sidebarCollapsed') === '1');
-
-  if(collapseBtn){
-    collapseBtn.addEventListener('click', ()=> setCollapsed(!(appGrid.classList.contains('collapsed'))));
-  }
-
-  // --- Mobile open/close ---
-  const menuBtn   = document.getElementById('menu-button');
-  const overlay   = document.getElementById('sidebar-overlay');
-  if(menuBtn){
-    menuBtn.addEventListener('click', ()=>{
-      sidebar.classList.add('show');
-      overlay.classList.remove('hidden');
-    });
-  }
-  if(overlay){
-    overlay.addEventListener('click', ()=>{
-      sidebar.classList.remove('show');
-      overlay.classList.add('hidden');
-    });
-  }
-
-  /* ====== Modal logic (khôi phục để nút "Thêm mới" hoạt động) ====== */
-  const docModal = document.getElementById('add-document-modal');
-  const addUserModal = document.getElementById('add-user-modal');
+  // ===== Modal logic =====
+  const docModal      = document.getElementById('add-document-modal');
+  const addUserModal  = document.getElementById('add-user-modal');
   const viewUserModal = document.getElementById('view-user-modal');
   const editUserModal = document.getElementById('edit-user-modal');
 
-  function openModal(modal){ modal.classList.remove('hidden'); modal.classList.add('flex'); }
-  function closeModal(modal){ modal.classList.add('hidden'); modal.classList.remove('flex'); }
+  function openModal(m){ m?.classList.remove('hidden'); m?.classList.add('flex'); }
+  function closeModal(m){ m?.classList.add('hidden'); m?.classList.remove('flex'); }
 
-  function populateHandlerDropdown(selectElement, users){
-    if(!selectElement) return;
-    selectElement.innerHTML = '<option value="null">-- Chưa giao --</option>';
-    (users||[]).forEach(user=>{
-      const option = document.createElement('option');
-      option.value = user.id; option.textContent = user.full_name;
-      selectElement.appendChild(option);
+  function populateHandlerDropdown(selectEl, users){
+    if(!selectEl) return;
+    selectEl.innerHTML = '<option value="null">-- Chưa giao --</option>';
+    (users||[]).forEach(u=>{
+      const opt=document.createElement('option');
+      opt.value=u.id; opt.textContent=u.full_name; selectEl.appendChild(opt);
     });
   }
 
-  document.addEventListener('click',(e)=>{
-    const t = e.target.closest('[data-action]');
-    if(!t) return;
-    const act = t.dataset.action;
+  document.addEventListener('click', (ev)=>{
+    const btn = ev.target.closest('[data-action]');
+    if(!btn) return;
+    const act = btn.dataset.action;
 
-    // Open add-document
-    if(act === 'open-add-modal'){
-      const users = JSON.parse(t.dataset.users || '[]');
-      const form  = docModal.querySelector('form');
-      if(form){ form.reset(); }
+    if(act==='open-add-modal'){
+      const users = JSON.parse(btn.dataset.users||'[]');
+      const form  = docModal?.querySelector('form');
+      form?.reset();
       populateHandlerDropdown(document.getElementById('form-handler_id'), users);
       openModal(docModal);
+      lucide.createIcons();
     }
-    if(act === 'open-add-user-modal'){
-      const form = addUserModal.querySelector('form');
-      if(form){ form.reset(); }
-      // reset highlight lỗi
-      const pw = addUserModal.querySelector('input[name="password"]');
-      const cf = addUserModal.querySelector('input[name="confirm_password"]');
-      const msg = addUserModal.querySelector('#add-password-mismatch-message');
-      [pw,cf].forEach(i=>i && i.classList.remove('border-red-500'));
-      if(msg) msg.classList.add('hidden');
-      openModal(addUserModal);
-    }
-    if(act === 'open-view-user-modal'){
-      const users = JSON.parse(t.dataset.users || '[]');
-      const id = t.dataset.id;
-      const u = users.find(x=> String(x.id) === String(id));
-      if(u){
-        viewUserModal.querySelector('#view-full_name').textContent = u.full_name;
-        viewUserModal.querySelector('#view-position').textContent  = u.position;
-        viewUserModal.querySelector('#view-username').textContent  = u.username;
-        viewUserModal.querySelector('#view-role').textContent      = (u.role === 'admin' ? 'Quản trị viên' : 'Người dùng');
-        openModal(viewUserModal);
+    if(act==='open-add-user-modal'){ openModal(addUserModal); lucide.createIcons(); }
+    if(act==='open-view-user-modal'){
+      const data=JSON.parse(btn.dataset.user||'{}');
+      if(viewUserModal){
+        viewUserModal.querySelector('#view-full_name').textContent = data.full_name||'';
+        viewUserModal.querySelector('#view-position').textContent  = data.position||'';
+        viewUserModal.querySelector('#view-username').textContent  = data.username||'';
+        viewUserModal.querySelector('#view-role').textContent      = data.role==='admin'?'Quản trị viên':'Người dùng';
       }
+      openModal(viewUserModal); lucide.createIcons();
     }
-    if(act === 'open-edit-user-modal'){
-      const users = JSON.parse(t.dataset.users || '[]');
-      const id = t.dataset.id;
-      const u = users.find(x=> String(x.id) === String(id));
-      if(u){
-        const form = editUserModal.querySelector('form');
-        form.action = `/users/${id}/edit`;
-        form.querySelector('input[name="full_name"]').value = u.full_name || '';
-        form.querySelector('input[name="position"]').value  = u.position  || '';
-        form.querySelector('input[name="username"]').value  = u.username  || '';
-        form.querySelector('input[name="username"]').readOnly = true;
-        form.querySelector('select[name="role"]').value     = u.role || 'user';
-        // reset password fields
-        form.querySelector('input[name="password"]').value = '';
-        form.querySelector('input[name="confirm_password"]').value = '';
-        const msg = editUserModal.querySelector('#edit-password-mismatch-message');
-        if(msg) msg.classList.add('hidden');
-        openModal(editUserModal);
-      }
+    if(act==='open-edit-user-modal'){
+      const data=JSON.parse(btn.dataset.user||'{}');
+      const form = editUserModal?.querySelector('form'); if(!form) return;
+      form.action = `/users/${data.id}/edit`;
+      form.querySelector('input[name="full_name"]').value = data.full_name||'';
+      form.querySelector('input[name="position"]').value  = data.position||'';
+      form.querySelector('input[name="username"]').value  = data.username||'';
+      form.querySelector('input[name="username"]').readOnly = true;
+      form.querySelector('select[name="role"]').value     = data.role||'user';
+      form.querySelector('input[name="password"]').value  = '';
+      form.querySelector('input[name="confirm_password"]').value = '';
+      openModal(editUserModal); lucide.createIcons();
     }
-    if(act === 'delete-user'){
-      if(confirm('Bạn có chắc chắn muốn xóa người dùng này không?')){
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/users/${t.dataset.id}/delete`;
-        document.body.appendChild(form);
-        form.submit();
-      }
-    }
-    if(act === 'close-modal'){ closeModal(t.closest('.modal')); }
+    if(act==='close-modal'){ closeModal(btn.closest('.modal')); }
   });
 
-  // Validate mật khẩu ở modal Thêm/Sửa user
-  (function wireUserForms(){
-    const addForm  = addUserModal?.querySelector('form');
-    const editForm = editUserModal?.querySelector('form');
-
-    function install(form, msgSel){
-      if(!form) return;
-      const pw  = form.querySelector('input[name="password"]');
-      const cf  = form.querySelector('input[name="confirm_password"]');
-      const msg = document.querySelector(msgSel);
-      const check = ()=>{
-        if(!pw || !cf) return true;
-        if(pw.value && cf.value && pw.value !== cf.value){
-          msg?.classList.remove('hidden');
-          pw.classList.add('border-red-500'); cf.classList.add('border-red-500'); return false;
-        }
-        msg?.classList.add('hidden');
-        pw?.classList.remove('border-red-500'); cf?.classList.remove('border-red-500'); return true;
-      };
-      pw?.addEventListener('input', check);
-      cf?.addEventListener('input', check);
-      form.addEventListener('submit', (e)=>{ if(!check()) e.preventDefault(); });
-    }
-    install(addForm,  '#add-password-mismatch-message');
-    install(editForm, '#edit-password-mismatch-message');
-  })();
+  // Validate password
+  const addUserForm = addUserModal?.querySelector('form');
+  if(addUserForm){
+    const p=addUserForm.querySelector('input[name="password"]');
+    const c=addUserForm.querySelector('input[name="confirm_password"]');
+    const msg=addUserForm.querySelector('#add-password-mismatch-message');
+    const check=()=>{ if(c.value && p.value!==c.value){ msg.classList.remove('hidden'); return false;} msg.classList.add('hidden'); return true; };
+    p.addEventListener('input',check); c.addEventListener('input',check);
+    addUserForm.addEventListener('submit',e=>{ if(!check()) e.preventDefault(); });
+  }
+  const editUserForm = editUserModal?.querySelector('form');
+  if(editUserForm){
+    const p=editUserForm.querySelector('input[name="password"]');
+    const c=editUserForm.querySelector('input[name="confirm_password"]');
+    const msg=editUserForm.querySelector('#edit-password-mismatch-message');
+    const check=()=>{ if((p.value||c.value) && p.value!==c.value){ msg.classList.remove('hidden'); return false;} msg.classList.add('hidden'); return true; };
+    p.addEventListener('input',check); c.addEventListener('input',check);
+    editUserForm.addEventListener('submit',e=>{ if(!check()) e.preventDefault(); });
+  }
 </script>
 </body>
 </html>

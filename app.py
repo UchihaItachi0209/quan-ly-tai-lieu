@@ -201,71 +201,59 @@ def dashboard():
 
     # ---- Lọc / tìm kiếm / phân trang ----
     args = request.args
-    q = (args.get('q') or '').strip()                   # tìm theo Tiêu đề
-    country = (args.get('country') or '').strip()       # Hướng (quốc gia)
-    status = (args.get('status') or '').strip()         # Trạng thái
-    week_raw = (args.get('week') or '').strip()         # Tuần (00-53)
-    year_raw = (args.get('year') or '').strip()         # Năm (YYYY)
+    q = (args.get('q') or '').strip()
+    country = (args.get('country') or '').strip()
+    status = (args.get('status') or '').strip()
+    week_raw = (args.get('week') or '').strip()
+    year_raw = (args.get('year') or '').strip()
+    handler_raw = (args.get('handler_id') or '').strip()   # << NEW
 
-    # Chuẩn hoá week (2 chữ số, 00..53) & year (4 chữ số)
+    # Chuẩn hoá Tuần/Năm
     week = ''
     if week_raw != '':
-        try:
-            week = f"{int(week_raw):02d}"
-        except ValueError:
-            week = ''
+        try: week = f"{int(week_raw):02d}"
+        except ValueError: week = ''
     year = ''
     if year_raw != '':
-        try:
-            year = f"{int(year_raw):04d}"
-        except ValueError:
-            year = ''
+        try: year = f"{int(year_raw):04d}"
+        except ValueError: year = ''
 
     # page size
-    try:
-        page_size = int(args.get('page_size', 10))
-    except ValueError:
-        page_size = 10
-    if page_size not in [5, 10, 20, 50, 100]:
-        page_size = 10
+    try: page_size = int(args.get('page_size', 10))
+    except ValueError: page_size = 10
+    if page_size not in [5, 10, 20, 50, 100]: page_size = 10
 
     # current page
-    try:
-        page = int(args.get('page', 1))
-    except ValueError:
-        page = 1
-    if page < 1:
-        page = 1
+    try: page = int(args.get('page', 1))
+    except ValueError: page = 1
+    if page < 1: page = 1
 
-    # WHERE linh hoạt
+    # WHERE
     conditions, params = [], []
     if q:
-        conditions.append("d.title LIKE ?")
-        params.append(f"%{q}%")
+        conditions.append("d.title LIKE ?"); params.append(f"%{q}%")
     if country:
-        conditions.append("d.country LIKE ?")
-        params.append(f"%{country}%")
+        conditions.append("d.country LIKE ?"); params.append(f"%{country}%")
     if status:
-        conditions.append("d.status = ?")
-        params.append(status)
+        conditions.append("d.status = ?"); params.append(status)
     if week:
-        # Tuần theo SQLite: %W (Mon-first, 00..53)
-        conditions.append("strftime('%W', d.creation_date) = ?")
-        params.append(week)
+        conditions.append("strftime('%W', d.creation_date) = ?"); params.append(week)
     if year:
-        conditions.append("strftime('%Y', d.creation_date) = ?")
-        params.append(year)
+        conditions.append("strftime('%Y', d.creation_date) = ?"); params.append(year)
+    # NEW: handler filter
+    if handler_raw == 'null':
+        conditions.append("d.handler_id IS NULL")
+    elif handler_raw:
+        conditions.append("d.handler_id = ?"); params.append(int(handler_raw))
 
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
     # Đếm & phân trang
     total_filtered = db.execute(
-        f"SELECT COUNT(d.id) FROM documents d {where_clause}",
-        params
+        f"SELECT COUNT(d.id) FROM documents d {where_clause}", params
     ).fetchone()[0]
     total_pages = max((total_filtered + page_size - 1) // page_size, 1)
-    if page > total_pages:
-        page = total_pages
+    if page > total_pages: page = total_pages
     offset = (page - 1) * page_size
 
     # Lấy danh sách
@@ -283,7 +271,8 @@ def dashboard():
 
     filters = {
         "q": q, "country": country, "status": status,
-        "week": week, "year": year, "page_size": page_size
+        "week": week, "year": year, "page_size": page_size,
+        "handler_id": handler_raw,                                # << NEW
     }
 
     return render_template(
@@ -292,12 +281,13 @@ def dashboard():
         documents=documents,
         users=users,
         current_user=session,
-        active_page='dashboard',
+        active_page='documents',                                  # << đảm bảo highlight đúng menu
         total_filtered=total_filtered,
         total_pages=total_pages,
         page=page,
         filters=filters
     )
+
 
 
 
