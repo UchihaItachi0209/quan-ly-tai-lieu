@@ -1,224 +1,305 @@
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-slate-100">
+<html lang="vi" class="h-full">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Dashboard{% endblock %} - Hệ thống TCM chuyên sâu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Dashboard{% endblock %} - Hệ thống TS-TCM</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
 
   <style>
-    :root{ --sb-bg:#3a4150; --sb-text:#e5e7eb; --sb-text-dim:#cbd5e1; }
-    body{font-family:'Inter',sans-serif}
-    #app-grid{display:grid;min-height:100vh;grid-template-columns:280px 1fr;}
-    @media (max-width:1023px){ #app-grid{grid-template-columns:1fr;} }
-    .sidebar{background:var(--sb-bg);color:var(--sb-text)}
-    .sidebar[data-collapsed="true"] .nav-label,
-    .sidebar[data-collapsed="true"] .section-title,
-    .sidebar[data-collapsed="true"] .user-block .meta{display:none}
-    .sidebar[data-collapsed="true"]{width:76px}
-    .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--sb-text-dim)}
-    .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
-    .nav-item.active{background:rgba(255,255,255,.12);color:#fff}
-    .icon-pill{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:999px}
-    header{position:sticky;top:0;z-index:30}
-    @media (max-width:1023px){
-      #sidebar{position:fixed;inset:0 40% 0 0;transform:translateX(-100%);transition:transform .25s}
-      #sidebar[data-open="true"]{transform:none}
-      #sidebar .panel{width:280px;height:100%}
-      #sidebar .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+    :root{ --sbw:16rem; --sbw-sm:72px; }
+    html,body{ height:100%; }
+    body{
+      font-family:'Inter',sans-serif; font-size:16px;
+      /* nền tươi hơn */
+      background: linear-gradient(180deg,#f3f7ff 0%, #f8fafc 22%, #ffffff 100%);
     }
+
+    /* ===== Sidebar ===== */
+    .sidebar{
+      width:var(--sbw); background:#1f2937; color:#cbd5e1; transition:width .25s ease;
+      box-shadow: 2px 0 10px rgba(2,132,199,.06);
+    }
+    .sidebar .brand{ height:60px; }
+    .sidebar-link{
+      display:flex; align-items:center; gap:.75rem;
+      padding:.55rem .75rem; border-radius:.5rem; color:#cbd5e1; transition:all .2s;
+    }
+    .sidebar-link:hover{ color:#fff; background:#334155; }
+    .sidebar-link.active{ color:#fff; background:#334155; }
+    .label{ white-space:nowrap; }
+
+    /* Collapsed sidebar */
+    body.sb-collapsed .sidebar{ width:var(--sbw-sm); }
+    body.sb-collapsed .label{ display:none; }
+    body.sb-collapsed .brand .title{ display:none; }
+    body.sb-collapsed .brand .brand-shield{ display:none !important; } /* ẩn icon khiên */
+
+    /* Main panel padding equals sidebar width */
+    .main{ padding-left:var(--sbw); transition:padding-left .25s ease; }
+    body.sb-collapsed .main{ padding-left:var(--sbw-sm); }
+
+    /* ===== Header ===== */
+    .app-header{
+      height:56px; backdrop-filter:saturate(180%) blur(8px);
+      background:rgba(255,255,255,.85);
+      border-bottom:1px solid #e5e7eb;
+    }
+
+    /* ===== Surfaces (làm đẹp card/bảng/badge) ===== */
+    .nice-card{
+      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      border:1px solid #e2e8f0;
+      box-shadow:0 8px 24px rgba(2,132,199,.08);
+      border-radius:.9rem;
+    }
+    table thead th{
+      background:linear-gradient(180deg,#f1f5f9 0%,#e2e8f0 100%);
+      color:#0f172a; font-weight:700;
+    }
+    table tbody tr:hover{ background:#f8fafc; }
+    table td{ border-color:#f1f5f9; }
+
+    .badge{ padding:.28rem .6rem; border-radius:.6rem; font-weight:700; font-size:.75rem; }
+    .badge-red{   background:#fee2e2; color:#b91c1c; }
+    .badge-amber{ background:#fef3c7; color:#b45309; }
+    .badge-green{ background:#dcfce7; color:#166534; }
+
+    /* Label filter to hơn & đậm hơn */
+    #filter-form label{ font-size:.95rem; font-weight:600; color:#475569; }
   </style>
 </head>
-<body class="h-full">
-<div id="app-grid">
-  <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar" data-collapsed="false">
-    <div class="overlay lg:hidden hidden" id="sidebar-overlay"></div>
-    <div class="panel h-full border-r border-gray-600">
-      <div class="h-[60px] flex items-center justify-between px-4 border-b border-gray-600">
-        <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 text-white">
-          <span class="icon-pill bg-emerald-500/20 text-emerald-300"><i data-lucide="shield" class="w-5 h-5"></i></span>
-          <span class="nav-label text-[15px] font-semibold">Hệ thống TCM chuyên sâu</span>
-        </a>
-        <button id="collapse-btn" class="hidden lg:inline-flex p-2 rounded hover:bg-gray-600" title="Thu gọn/Mở rộng">
-          <i data-lucide="panel-left-close" class="w-5 h-5"></i>
-        </button>
+<body>
+
+<!-- ===== Sidebar ===== -->
+<aside class="fixed inset-y-0 left-0 z-40 sidebar">
+  <div class="flex h-full flex-col">
+    <!-- Brand -->
+    <div class="brand flex items-center px-4 border-b border-slate-700">
+      <button id="sidebar-toggle" class="p-2 rounded hover:bg-slate-700" title="Thu gọn / Mở rộng" type="button">
+        <i data-lucide="menu" class="w-5 h-5 text-slate-200"></i>
+      </button>
+      <div class="flex items-center gap-2 ml-2 text-white font-semibold">
+        <i data-lucide="shield" class="brand-shield h-6 w-6 text-sky-400"></i>
+        <span class="title">Hệ thống TS-TCM</span>
       </div>
-
-      <div class="px-3 py-3">
-        <div class="user-block flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-600/50">
-          <img src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0ea5e9&color=fff&rounded=true&size=64" class="h-9 w-9 rounded-full" alt="avatar">
-          <div class="meta">
-            <div class="font-semibold text-white leading-5 text-sm">{{ current_user.user_name }}</div>
-            <div class="text-[11px] text-gray-300">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</div>
-          </div>
-        </div>
-      </div>
-
-      <nav class="px-3 pb-4 text-sm font-medium space-y-2">
-        <div class="section-title text-xs uppercase px-2 mt-2 mb-1">THỐNG KÊ</div>
-        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_page == 'dashboard' }}">
-          <span class="icon-pill bg-sky-500/15 text-sky-300"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span>
-          <span class="nav-label">Dashboard</span>
-        </a>
-
-        <div class="section-title text-xs uppercase px-2 mt-4 mb-1">QUẢN LÝ</div>
-        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_page == 'documents' }}">
-          <span class="icon-pill bg-indigo-500/15 text-indigo-300"><i data-lucide="files" class="w-5 h-5"></i></span>
-          <span class="nav-label">Quản lý Tài liệu</span>
-        </a>
-        <a href="{{ url_for('manage_users') }}" class="nav-item {{ 'active' if active_page == 'users' }}">
-          <span class="icon-pill bg-teal-500/15 text-teal-300"><i data-lucide="users" class="w-5 h-5"></i></span>
-          <span class="nav-label">Quản lý Người dùng</span>
-        </a>
-
-        <a href="{{ url_for('logout') }}" class="nav-item">
-          <span class="icon-pill bg-rose-500/15 text-rose-300"><i data-lucide="log-out" class="w-5 h-5"></i></span>
-          <span class="nav-label">Đăng xuất</span>
-        </a>
-      </nav>
     </div>
-  </aside>
 
-  <!-- Main -->
-  <div class="flex flex-col">
-    <header class="flex h-14 items-center gap-4 border-b bg-white px-4 lg:h-[60px] lg:px-6">
-      <button id="menu-button" class="lg:hidden p-2 -ml-2"><i data-lucide="menu" class="w-6 h-6"></i></button>
-      <div class="w-full flex-1"></div>
-      <div class="flex items-center gap-4">
-        <div class="text-right">
-          <p class="font-semibold text-sm text-slate-900">{{ current_user.user_name }}</p>
-          <p class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</p>
+    <!-- Profile mini -->
+    <div class="px-4 py-3 border-b border-slate-700">
+      <div class="flex items-center gap-3">
+        <img src="{{ current_user.avatar and url_for('serve_upload', filename=current_user.avatar) or ('https://ui-avatars.com/api/?name=' ~ (current_user.user_name|urlencode)) }}"
+             class="w-9 h-9 rounded-full" alt="avatar" />
+        <div class="leading-tight">
+          <div class="text-sm font-semibold text-white truncate label">{{ current_user.user_name }}</div>
+          <div class="text-xs text-slate-400 label">{{ 'Quản trị viên' if current_user.user_role=='admin' else 'Người dùng' }}</div>
         </div>
-        <img src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0284c7&color=fff&rounded=true&size=40" class="rounded-full" alt="avatar">
-        <a href="{{ url_for('logout') }}" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"><i data-lucide="log-out" class="w-5 h-5"></i></a>
       </div>
-    </header>
+    </div>
 
-    <main class="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-slate-100">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="w-full text-base p-3 rounded-md {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-700' }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
-      {% block content %}{% endblock %}
-    </main>
+    <!-- Nav -->
+    <nav class="flex-1 overflow-y-auto px-3 py-3 text-sm">
+      <div class="text-xs font-semibold text-slate-400 uppercase px-2 mb-2 label">Thống kê</div>
+      <a href="{{ url_for('dashboard') }}"
+         class="sidebar-link {{ 'active' if active_page == 'dashboard' }}">
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span class="label">Dashboard</span>
+      </a>
+
+      <div class="text-xs font-semibold text-slate-400 uppercase px-2 mt-4 mb-2 label">Quản lý</div>
+      <a href="{{ url_for('dashboard') }}"
+         class="sidebar-link {{ 'active' if active_page == 'documents' }}">
+        <i data-lucide="files" class="h-4 w-4"></i><span class="label">Quản lý Tài liệu</span>
+      </a>
+      <a href="{{ url_for('manage_users') }}"
+         class="sidebar-link {{ 'active' if active_page=='users' }}">
+        <i data-lucide="users" class="h-4 w-4"></i><span class="label">Quản lý Người dùng</span>
+      </a>
+    </nav>
+
+    <!-- Logout -->
+    <div class="px-3 py-3 border-t border-slate-700">
+      <a href="{{ url_for('logout') }}" class="sidebar-link">
+        <i data-lucide="log-out" class="h-4 w-4"></i><span class="label">Đăng xuất</span>
+      </a>
+    </div>
   </div>
-</div>
+</aside>
 
-<!-- Modals -->
+<!-- ===== Main ===== -->
+<div class="main flex min-h-screen flex-col">
+  <!-- Header -->
+  <header class="app-header flex items-center justify-end px-4 sticky top-0 z-30">
+    <div class="relative" id="userMenu">
+      <button id="user-btn" class="flex items-center gap-3 p-2 rounded hover:bg-slate-100" type="button">
+        <div class="text-right">
+          <div class="text-sm font-semibold text-slate-900">{{ current_user.user_name }}</div>
+          <div class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role=='admin' else 'Người dùng' }}</div>
+        </div>
+        <img src="{{ current_user.avatar and url_for('serve_upload', filename=current_user.avatar) or ('https://ui-avatars.com/api/?name=' ~ (current_user.user_name|urlencode)) }}"
+             class="w-9 h-9 rounded-full" alt="avatar" />
+        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500"></i>
+      </button>
+      <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-44 rounded-md border bg-white shadow-lg">
+        <a href="{{ url_for('profile') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm">
+          <i data-lucide="user" class="w-4 h-4"></i> Hồ sơ
+        </a>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm">
+          <i data-lucide="log-out" class="w-4 h-4"></i> Đăng xuất
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="flex-1 p-4 lg:p-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="mb-3 rounded-md px-3 py-2 text-sm
+            {{ 'bg-green-100 text-green-800' if category=='success'
+             else ('bg-red-100 text-red-800' if category=='error'
+             else 'bg-sky-50 text-sky-800') }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
 {% include 'modals/add_document.html' %}
 {% include 'modals/add_user.html' %}
 {% include 'modals/view_user.html' %}
 {% include 'modals/edit_user.html' %}
-
+<!-- ===== JS ===== -->
 <script>
   lucide.createIcons();
 
-  // Sidebar open/collapse
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const menuBtn = document.getElementById('menu-button');
-  const collapseBtn = document.getElementById('collapse-btn');
-  menuBtn?.addEventListener('click', () => {
-    const isOpen = sidebar.getAttribute('data-open') === 'true';
-    sidebar.setAttribute('data-open', isOpen ? 'false' : 'true');
-    overlay.classList.toggle('hidden', isOpen);
-  });
-  overlay?.addEventListener('click', () => {
-    sidebar.setAttribute('data-open', 'false'); overlay.classList.add('hidden');
-  });
-  collapseBtn?.addEventListener('click', () => {
-    const isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
-    sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+  /* Sidebar toggle + remember state */
+  const sbKey='sbCollapsed';
+  const btnToggle = document.getElementById('sidebar-toggle');
+  if (localStorage.getItem(sbKey)==='1') document.body.classList.add('sb-collapsed');
+  btnToggle?.addEventListener('click', ()=> {
+    document.body.classList.toggle('sb-collapsed');
+    localStorage.setItem(sbKey, document.body.classList.contains('sb-collapsed')?'1':'0');
   });
 
-  // ===== Modal logic =====
+  /* User dropdown */
+  const userBtn=document.getElementById('user-btn');
+  const userDd=document.getElementById('user-dropdown');
+  userBtn?.addEventListener('click',(e)=>{ e.stopPropagation(); userDd?.classList.toggle('hidden'); });
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('#userMenu')) userDd?.classList.add('hidden'); });
+
+  /* ===== MODALS ===== */
   const docModal      = document.getElementById('add-document-modal');
   const addUserModal  = document.getElementById('add-user-modal');
   const viewUserModal = document.getElementById('view-user-modal');
   const editUserModal = document.getElementById('edit-user-modal');
 
-  function openModal(m){ m?.classList.remove('hidden'); m?.classList.add('flex'); }
-  function closeModal(m){ m?.classList.add('hidden'); m?.classList.remove('flex'); }
+  const openModal  = (m)=>{ if(!m) return; m.classList.remove('hidden'); m.classList.add('flex'); };
+  const closeModal = (m)=>{ if(!m) return; m.classList.add('hidden');  m.classList.remove('flex'); };
 
   function populateHandlerDropdown(selectEl, users){
     if(!selectEl) return;
     selectEl.innerHTML = '<option value="null">-- Chưa giao --</option>';
-    (users||[]).forEach(u=>{
+    users.forEach(u=>{
       const opt=document.createElement('option');
-      opt.value=u.id; opt.textContent=u.full_name; selectEl.appendChild(opt);
+      opt.value=u.id; opt.textContent=u.full_name;
+      selectEl.appendChild(opt);
     });
   }
 
-  document.addEventListener('click', (ev)=>{
-    const btn = ev.target.closest('[data-action]');
-    if(!btn) return;
-    const act = btn.dataset.action;
+  /* BẮT CHẮC cho 2 nút “Thêm mới …” sau khi DOM sẵn sàng */
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const addDocBtn  = document.querySelector('[data-action="open-add-modal"]');
+    const addUserBtn = document.querySelector('[data-action="open-add-user-modal"]');
 
-    if(act==='open-add-modal'){
-      const users = JSON.parse(btn.dataset.users||'[]');
+    addDocBtn?.addEventListener('click',(e)=>{
+      e.preventDefault(); e.stopPropagation();
+      let users=[];
+      try{ users = JSON.parse(addDocBtn.dataset.users || '[]'); }catch(_){}
       const form  = docModal?.querySelector('form');
-      form?.reset();
-      populateHandlerDropdown(document.getElementById('form-handler_id'), users);
-      openModal(docModal);
-      lucide.createIcons();
-    }
-    if(act==='open-add-user-modal'){ openModal(addUserModal); lucide.createIcons(); }
-    if(act==='open-view-user-modal'){
-      const data=JSON.parse(btn.dataset.user||'{}');
-      if(viewUserModal){
-        viewUserModal.querySelector('#view-full_name').textContent = data.full_name||'';
-        viewUserModal.querySelector('#view-position').textContent  = data.position||'';
-        viewUserModal.querySelector('#view-username').textContent  = data.username||'';
-        viewUserModal.querySelector('#view-role').textContent      = data.role==='admin'?'Quản trị viên':'Người dùng';
+      if(form){
+        form.reset();
+        const handlerSel = form.querySelector('#form-handler_id, select[name="handler_id"]');
+        populateHandlerDropdown(handlerSel, users);
       }
-      openModal(viewUserModal); lucide.createIcons();
-    }
-    if(act==='open-edit-user-modal'){
-      const data=JSON.parse(btn.dataset.user||'{}');
-      const form = editUserModal?.querySelector('form'); if(!form) return;
-      form.action = `/users/${data.id}/edit`;
-      form.querySelector('input[name="full_name"]').value = data.full_name||'';
-      form.querySelector('input[name="position"]').value  = data.position||'';
-      form.querySelector('input[name="username"]').value  = data.username||'';
-      form.querySelector('input[name="username"]').readOnly = true;
-      form.querySelector('select[name="role"]').value     = data.role||'user';
-      form.querySelector('input[name="password"]').value  = '';
-      form.querySelector('input[name="confirm_password"]').value = '';
-      openModal(editUserModal); lucide.createIcons();
-    }
-    if(act==='close-modal'){ closeModal(btn.closest('.modal')); }
+      openModal(docModal);
+    });
+
+    addUserBtn?.addEventListener('click',(e)=>{
+      e.preventDefault(); e.stopPropagation();
+      addUserModal?.querySelector('form')?.reset();
+      openModal(addUserModal);
+    });
   });
 
-  // Validate password
-  const addUserForm = addUserModal?.querySelector('form');
-  if(addUserForm){
-    const p=addUserForm.querySelector('input[name="password"]');
-    const c=addUserForm.querySelector('input[name="confirm_password"]');
-    const msg=addUserForm.querySelector('#add-password-mismatch-message');
-    const check=()=>{ if(c.value && p.value!==c.value){ msg.classList.remove('hidden'); return false;} msg.classList.add('hidden'); return true; };
-    p.addEventListener('input',check); c.addEventListener('input',check);
-    addUserForm.addEventListener('submit',e=>{ if(!check()) e.preventDefault(); });
-  }
-  const editUserForm = editUserModal?.querySelector('form');
-  if(editUserForm){
-    const p=editUserForm.querySelector('input[name="password"]');
-    const c=editUserForm.querySelector('input[name="confirm_password"]');
-    const msg=editUserForm.querySelector('#edit-password-mismatch-message');
-    const check=()=>{ if((p.value||c.value) && p.value!==c.value){ msg.classList.remove('hidden'); return false;} msg.classList.add('hidden'); return true; };
-    p.addEventListener('input',check); c.addEventListener('input',check);
-    editUserForm.addEventListener('submit',e=>{ if(!check()) e.preventDefault(); });
-  }
+  /* Delegation cho view/edit/delete + close */
+  document.addEventListener('click',(ev)=>{
+    const t = ev.target.closest('[data-action]');
+    if(!t) return;
+    const action = t.dataset.action;
+
+    /* chặn mặc định để không submit form bất ngờ */
+    ev.preventDefault();
+
+    if(action==='open-view-user-modal'){
+      const list = JSON.parse(t.dataset.users || '[]');
+      const id   = t.dataset.id;
+      const u    = list.find(x=>String(x.id)===String(id));
+      if(u && viewUserModal){
+        viewUserModal.querySelector('#view-full_name').textContent=u.full_name||'';
+        viewUserModal.querySelector('#view-position').textContent =u.position||'';
+        viewUserModal.querySelector('#view-username').textContent =u.username||'';
+        viewUserModal.querySelector('#view-role').textContent     =(u.role==='admin'?'Quản trị viên':'Người dùng');
+        openModal(viewUserModal);
+      }
+      return;
+    }
+
+    if(action==='open-edit-user-modal'){
+      const list = JSON.parse(t.dataset.users || '[]');
+      const id   = t.dataset.id;
+      const u    = list.find(x=>String(x.id)===String(id));
+      if(u && editUserModal){
+        const f = editUserModal.querySelector('form');
+        f.action = `/users/${id}/edit`;
+        f.querySelector('input[name="full_name"]').value = u.full_name||'';
+        f.querySelector('input[name="position"]').value  = u.position||'';
+        f.querySelector('input[name="username"]').value  = u.username||'';
+        f.querySelector('input[name="username"]').readOnly = true;
+        f.querySelector('select[name="role"]').value      = u.role||'user';
+        f.querySelector('input[name="password"]').value = '';
+        f.querySelector('input[name="confirm_password"]').value = '';
+        openModal(editUserModal);
+      }
+      return;
+    }
+
+    if(action==='delete-user'){
+      if(confirm('Bạn có chắc chắn muốn xóa người dùng này không?')){
+        const form=document.createElement('form');
+        form.method='POST'; form.action=`/users/${t.dataset.id}/delete`;
+        document.body.appendChild(form); form.submit();
+      }
+      return;
+    }
+
+    if(action==='delete-doc'){
+      if(confirm('Bạn có chắc chắn muốn xóa tài liệu này không?')){
+        const form=document.createElement('form');
+        form.method='POST'; form.action=`/documents/${t.dataset.id}/delete`;
+        document.body.appendChild(form); form.submit();
+      }
+      return;
+    }
+
+    if(action==='close-modal'){ closeModal(t.closest('.modal')); }
+  });
 </script>
+
 </body>
 </html>
 

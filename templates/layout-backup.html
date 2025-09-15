@@ -2,150 +2,110 @@
 <html lang="vi" class="h-full bg-slate-100">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Dashboard{% endblock %} - Hệ thống trinh sát, tác chiến mạng chuyên sâu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Dashboard{% endblock %} - Hệ thống TCM chuyên sâu</title>
 
+  <!-- Tailwind + Fonts + Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
-
   <style>
-    :root { --sidebar-w: 280px; }
-    body { font-family: "Inter", sans-serif; font-size: 16px; }
-
-    /* Lưới chính: đổi độ rộng cột bên trái bằng class .collapsed */
-    #app-grid{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns: var(--sidebar-w) 1fr;
-    }
-    #app-grid.collapsed{ --sidebar-w: 84px; }
-
-    /* ==== Sidebar (xám) ==== */
-    .sidebar{ background:#374151; /* gray-700 */ color:#e5e7eb; /* gray-200 */ }
-    .sidebar .section-title{ letter-spacing:.08em; color:#cbd5e1; } /* slate-300 */
-    .sidebar .nav-item{
-      display:flex; align-items:center; gap:.75rem;
-      padding:.625rem .75rem; border-radius:.5rem;
-      color:#e5e7eb; transition:all .15s ease;
-    }
-    .sidebar .nav-item:hover{ background:#4b5563; color:#fff; }          /* gray-600 */
-    .sidebar .nav-item.active{ background:#4b5563; color:#fff; }
-    .icon-pill{
-      display:inline-grid; place-items:center;
-      width:34px;height:34px;border-radius:9999px;
-    }
-
-    /* Ẩn label khi thu gọn */
-    #sidebar[data-collapsed="true"] .nav-label{ display:none; }
-    #sidebar[data-collapsed="true"] .section-title{ display:none; }
-    #sidebar[data-collapsed="true"] .user-block .meta{ display:none; }
-    #sidebar[data-collapsed="true"] .user-block{ justify-content:center; }
-
-    /* Ẩn sidebar ở màn nhỏ – dùng nút menu để bật/tắt */
-    @media (max-width: 1024px){
-      #app-grid{ grid-template-columns: 1fr; }
-      #sidebar{ display:none; }
-      #sidebar.show{ display:block; position:fixed; inset:0 0 0 0; z-index:60; }
-      #sidebar .panel{ width:280px; height:100%; }
-      #sidebar .overlay{ position:absolute; inset:0; background:rgba(0,0,0,.45); }
-    }
+    body{font-family:'Inter',sans-serif;font-size:16px}
+    .sidebar{background:#1f2937;color:#cbd5e1}
+    .sidebar-link{display:flex;align-items:center;gap:.75rem;border-radius:.5rem;padding:.5rem .75rem;color:#cbd5e1}
+    .sidebar-link:hover{color:#fff;background:#374151}
+    .sidebar-link.active{color:#fff;background:#374151}
+    .icon-pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px}
   </style>
 </head>
-
 <body class="h-full">
-<div id="app-grid">
-  <!-- Sidebar -->
-  <aside id="sidebar" class="sidebar" data-collapsed="false">
-    <!-- overlay for mobile -->
-    <div class="overlay lg:hidden hidden" id="sidebar-overlay"></div>
+<div class="min-h-screen w-full">
 
-    <!-- panel -->
-    <div class="panel h-full border-r border-gray-600">
-      <!-- top brand + collapse -->
-      <div class="h-[60px] flex items-center justify-between px-4 border-b border-gray-600">
-        <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 text-white">
-          <!-- Hacker icon -->
-          <span class="icon-pill bg-emerald-500/20 text-emerald-300"><i data-lucide="skull" class="w-5 h-5"></i></span>
-          <span class="nav-label text-[15px] font-semibold">Hệ thống trinh sát, tác chiến mạng chuyên sâu</span>
-        </a>
-        <button id="collapse-btn" class="hidden lg:inline-flex p-2 rounded hover:bg-gray-600" title="Thu gọn / Mở rộng">
-          <i data-lucide="panel-left-close" class="w-5 h-5"></i>
-        </button>
+  <!-- ============ SIDEBAR (fixed) ============ -->
+  <aside class="fixed inset-y-0 left-0 z-40 w-64 sidebar">
+    <div class="h-full flex flex-col">
+      <!-- Brand -->
+      <div class="h-[60px] px-4 flex items-center border-b border-slate-700">
+        <div class="flex items-center gap-2 text-white font-semibold truncate">
+          <i data-lucide="shield" class="h-6 w-6 text-sky-400"></i>
+          <span class="truncate">Hệ thống TS-TCM</span>
+        </div>
       </div>
 
-      <!-- user -->
-      <div class="px-3 py-3">
-        <div class="user-block flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-600/50">
+      <!-- Mini profile -->
+      <div class="px-4 py-3 border-b border-slate-700">
+        <div class="flex items-center gap-3">
           <img
-            src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0ea5e9&color=fff&rounded=true&size=64"
-            class="h-9 w-9 rounded-full" alt="avatar">
-          <div class="meta">
-            <div class="font-semibold text-white leading-5 text-sm">{{ current_user.user_name }}</div>
-            <div class="text-[11px] text-gray-300">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</div>
+            src="{{ current_user.avatar and url_for('serve_upload', filename=current_user.avatar) or ('https://ui-avatars.com/api/?name=' ~ (current_user.user_name|urlencode)) }}"
+            class="w-9 h-9 rounded-full" />
+          <div class="leading-tight min-w-0">
+            <div class="text-sm font-semibold text-white truncate">{{ current_user.user_name }}</div>
+            <div class="text-xs text-slate-400">{{ 'Quản trị viên' if current_user.user_role=='admin' else 'Người dùng' }}</div>
           </div>
         </div>
       </div>
 
-      <!-- nav -->
-      <nav class="px-3 pb-4 text-sm font-medium space-y-2">
-        <div class="section-title text-xs uppercase px-2 mt-2 mb-1">THỐNG KÊ</div>
-        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_page in ['dashboard','documents'] }}">
-          <span class="icon-pill bg-sky-500/15 text-sky-300"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span>
-          <span class="nav-label">Dashboard</span>
+      <!-- Nav -->
+      <nav class="flex-1 overflow-y-auto px-3 py-3 text-sm">
+        <div class="text-xs font-semibold text-slate-400 uppercase px-2 mb-2">Thống kê</div>
+        <a href="{{ url_for('dashboard') }}" class="sidebar-link {{  'active' if active_page == 'dashboard' }}">
+          <i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard
         </a>
 
-        <div class="section-title text-xs uppercase px-2 mt-4 mb-1">QUẢN LÝ</div>
-        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_page == 'documents' }}">
-          <span class="icon-pill bg-indigo-500/15 text-indigo-300"><i data-lucide="files" class="w-5 h-5"></i></span>
-          <span class="nav-label">Quản lý Tài liệu</span>
+        <div class="text-xs font-semibold text-slate-400 uppercase px-2 mt-4 mb-2">Quản lý</div>
+        <a href="{{ url_for('dashboard') }}" class="sidebar-link {{ 'active' if active_page=='documents' }}">
+          <i data-lucide="files" class="h-4 w-4"></i> Quản lý Tài liệu
         </a>
-        <a href="{{ url_for('manage_users') }}" class="nav-item {{ 'active' if active_page == 'users' }}">
-          <span class="icon-pill bg-emerald-500/15 text-emerald-300"><i data-lucide="users" class="w-5 h-5"></i></span>
-          <span class="nav-label">Quản lý Người dùng</span>
-        </a>
-
-        <div class="pt-2 border-t border-gray-600 mt-2"></div>
-        <a href="{{ url_for('logout') }}" class="nav-item">
-          <span class="icon-pill bg-rose-500/15 text-rose-300"><i data-lucide="log-out" class="w-5 h-5"></i></span>
-          <span class="nav-label">Đăng xuất</span>
+        <a href="{{ url_for('manage_users') }}" class="sidebar-link {{ 'active' if active_page=='users' }}">
+          <i data-lucide="users" class="h-4 w-4"></i> Quản lý Người dùng
         </a>
       </nav>
+
+      <!-- Logout pinned bottom -->
+      <div class="px-3 py-3 border-t border-slate-700">
+        <a href="{{ url_for('logout') }}" class="sidebar-link">
+          <i data-lucide="log-out" class="h-4 w-4"></i> Đăng xuất
+        </a>
+      </div>
     </div>
   </aside>
 
-  <!-- Main -->
-  <div class="flex flex-col">
-    <header class="flex h-14 items-center gap-4 border-b bg-white px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
-      <!-- mobile menu -->
-      <button id="menu-button" class="lg:hidden p-2 -ml-2" title="Menu">
-        <i data-lucide="menu" class="w-6 h-6"></i>
-      </button>
-
-      <div class="w-full flex-1"></div>
-
-      <div class="flex items-center gap-4">
-        <div class="text-right">
-          <p class="font-semibold text-sm text-slate-900">{{ current_user.user_name }}</p>
-          <p class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role == 'admin' else 'Người dùng' }}</p>
+  <!-- ============ MAIN ============ -->
+  <div class="pl-64 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="h-14 flex items-center justify-end bg-white border-b px-4 sticky top-0 z-30">
+      <!-- User dropdown -->
+      <div class="relative">
+        <button id="user-menu-button" class="flex items-center gap-3 p-2 rounded hover:bg-slate-100">
+          <div class="text-right min-w-0">
+            <div class="text-sm font-semibold text-slate-900 truncate max-w-[220px]">{{ current_user.user_name }}</div>
+            <div class="text-xs text-slate-500">{{ 'Quản trị viên' if current_user.user_role=='admin' else 'Người dùng' }}</div>
+          </div>
+          <img
+            src="{{ current_user.avatar and url_for('serve_upload', filename=current_user.avatar) or ('https://ui-avatars.com/api/?name=' ~ (current_user.user_name|urlencode)) }}"
+            class="w-9 h-9 rounded-full" />
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500"></i>
+        </button>
+        <div id="user-menu" class="hidden absolute right-0 mt-2 w-56 rounded-md border bg-white shadow-lg overflow-hidden">
+          <a href="{{ url_for('profile') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm">
+            <i data-lucide="user" class="w-4 h-4"></i> Hồ sơ
+          </a>
+          <a href="{{ url_for('logout') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Đăng xuất
+          </a>
         </div>
-        <img
-          src="https://ui-avatars.com/api/?name={{ current_user.user_name|urlencode }}&background=0ea5e9&color=fff&rounded=true&size=40"
-          alt="Avatar" class="rounded-full">
       </div>
     </header>
 
-    <main class="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-slate-100">
+    <!-- Page -->
+    <main class="flex-1 p-4 lg:p-6 bg-slate-100">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-          <div class="w-full text-base p-3 rounded-md {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-700' }}">
-            {{ message }}
-          </div>
+            <div class="mb-3 rounded-md px-3 py-2 text-sm {{ 'bg-green-100 text-green-800' if category=='success' else ('bg-red-100 text-red-800' if category=='error' else 'bg-slate-100 text-slate-700') }}">
+              {{ message }}
+            </div>
           {% endfor %}
         {% endif %}
       {% endwith %}
@@ -155,126 +115,101 @@
   </div>
 </div>
 
+<!-- ============ MODALS (include BEFORE script) ============ -->
 {% include 'modals/add_document.html' %}
 {% include 'modals/add_user.html' %}
 {% include 'modals/view_user.html' %}
 {% include 'modals/edit_user.html' %}
 
 <script>
-  // Render Lucide icons
-  function renderIcons(){ if(window.lucide){ window.lucide.createIcons(); } }
-  renderIcons();
+  lucide.createIcons();
 
-  // --- Sidebar collapse on desktop ---
-  const appGrid   = document.getElementById('app-grid');
-  const sidebar   = document.getElementById('sidebar');
-  const collapseBtn = document.getElementById('collapse-btn');
-
-  function setCollapsed(state){
-    const collapsed = !!state;
-    appGrid.classList.toggle('collapsed', collapsed);
-    sidebar.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
-    localStorage.setItem('dh.sidebarCollapsed', collapsed ? '1' : '0');
-    renderIcons();
-  }
-  setCollapsed(localStorage.getItem('dh.sidebarCollapsed') === '1');
-
-  if(collapseBtn){
-    collapseBtn.addEventListener('click', ()=> setCollapsed(!(appGrid.classList.contains('collapsed'))));
-  }
-
-  // --- Mobile open/close ---
-  const menuBtn   = document.getElementById('menu-button');
-  const overlay   = document.getElementById('sidebar-overlay');
-  if(menuBtn){
-    menuBtn.addEventListener('click', ()=>{
-      sidebar.classList.add('show');
-      overlay.classList.remove('hidden');
+  /* ========= User dropdown ========= */
+  const userBtn  = document.getElementById('user-menu-button');
+  const userMenu = document.getElementById('user-menu');
+  if (userBtn && userMenu) {
+    userBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userMenu.classList.toggle('hidden');
     });
-  }
-  if(overlay){
-    overlay.addEventListener('click', ()=>{
-      sidebar.classList.remove('show');
-      overlay.classList.add('hidden');
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#user-menu') && !e.target.closest('#user-menu-button')) {
+        userMenu.classList.add('hidden');
+      }
     });
   }
 
-  /* ====== Modal logic (khôi phục để nút "Thêm mới" hoạt động) ====== */
-  const docModal = document.getElementById('add-document-modal');
-  const addUserModal = document.getElementById('add-user-modal');
+  /* ========= Modal open/close + actions ========= */
+  const docModal      = document.getElementById('add-document-modal');
+  const addUserModal  = document.getElementById('add-user-modal');
   const viewUserModal = document.getElementById('view-user-modal');
   const editUserModal = document.getElementById('edit-user-modal');
 
-  function openModal(modal){ modal.classList.remove('hidden'); modal.classList.add('flex'); }
-  function closeModal(modal){ modal.classList.add('hidden'); modal.classList.remove('flex'); }
+  const openModal  = (m)=>{ if(!m) return; m.classList.remove('hidden'); m.classList.add('flex'); };
+  const closeModal = (m)=>{ if(!m) return; m.classList.add('hidden');  m.classList.remove('flex'); };
 
-  function populateHandlerDropdown(selectElement, users){
-    if(!selectElement) return;
-    selectElement.innerHTML = '<option value="null">-- Chưa giao --</option>';
-    (users||[]).forEach(user=>{
-      const option = document.createElement('option');
-      option.value = user.id; option.textContent = user.full_name;
-      selectElement.appendChild(option);
+  function populateHandlerDropdown(selectEl, users){
+    if(!selectEl) return;
+    selectEl.innerHTML = '<option value="null">-- Chưa giao --</option>';
+    (users||[]).forEach(u=>{
+      const opt = document.createElement('option');
+      opt.value = u.id; opt.textContent = u.full_name;
+      selectEl.appendChild(opt);
     });
   }
 
-  document.addEventListener('click',(e)=>{
+  document.addEventListener('click', (e)=>{
     const t = e.target.closest('[data-action]');
     if(!t) return;
-    const act = t.dataset.action;
+    const action = t.dataset.action;
 
-    // Open add-document
-    if(act === 'open-add-modal'){
+    if(action === 'open-add-modal'){              // Thêm tài liệu
       const users = JSON.parse(t.dataset.users || '[]');
-      const form  = docModal.querySelector('form');
-      if(form){ form.reset(); }
-      populateHandlerDropdown(document.getElementById('form-handler_id'), users);
+      const form  = docModal?.querySelector('form');
+      if(form){
+        form.reset();
+        populateHandlerDropdown(form.querySelector('#form-handler_id'), users);
+      }
       openModal(docModal);
     }
-    if(act === 'open-add-user-modal'){
-      const form = addUserModal.querySelector('form');
-      if(form){ form.reset(); }
-      // reset highlight lỗi
-      const pw = addUserModal.querySelector('input[name="password"]');
-      const cf = addUserModal.querySelector('input[name="confirm_password"]');
-      const msg = addUserModal.querySelector('#add-password-mismatch-message');
-      [pw,cf].forEach(i=>i && i.classList.remove('border-red-500'));
-      if(msg) msg.classList.add('hidden');
+
+    if(action === 'open-add-user-modal'){         // Thêm người dùng
+      addUserModal?.querySelector('form')?.reset();
       openModal(addUserModal);
     }
-    if(act === 'open-view-user-modal'){
+
+    if(action === 'open-view-user-modal'){        // Xem người dùng
       const users = JSON.parse(t.dataset.users || '[]');
-      const id = t.dataset.id;
-      const u = users.find(x=> String(x.id) === String(id));
-      if(u){
+      const id    = t.dataset.id;
+      const u     = users.find(x=>String(x.id)===String(id));
+      if(u && viewUserModal){
         viewUserModal.querySelector('#view-full_name').textContent = u.full_name;
         viewUserModal.querySelector('#view-position').textContent  = u.position;
         viewUserModal.querySelector('#view-username').textContent  = u.username;
-        viewUserModal.querySelector('#view-role').textContent      = (u.role === 'admin' ? 'Quản trị viên' : 'Người dùng');
+        viewUserModal.querySelector('#view-role').textContent      = (u.role==='admin'?'Quản trị viên':'Người dùng');
         openModal(viewUserModal);
       }
     }
-    if(act === 'open-edit-user-modal'){
+
+    if(action === 'open-edit-user-modal'){        // Sửa người dùng
       const users = JSON.parse(t.dataset.users || '[]');
-      const id = t.dataset.id;
-      const u = users.find(x=> String(x.id) === String(id));
-      if(u){
-        const form = editUserModal.querySelector('form');
-        form.action = `/users/${id}/edit`;
-        form.querySelector('input[name="full_name"]').value = u.full_name || '';
-        form.querySelector('input[name="position"]').value  = u.position  || '';
-        form.querySelector('input[name="username"]').value  = u.username  || '';
-        form.querySelector('input[name="username"]').readOnly = true;
-        form.querySelector('select[name="role"]').value     = u.role || 'user';
-        // reset password fields
-        form.querySelector('input[name="password"]').value = '';
-        form.querySelector('input[name="confirm_password"]').value = '';
-        const msg = editUserModal.querySelector('#edit-password-mismatch-message');
-        if(msg) msg.classList.add('hidden');
+      const id    = t.dataset.id;
+      const u     = users.find(x=>String(x.id)===String(id));
+      if(u && editUserModal){
+        const f = editUserModal.querySelector('form');
+        f.action = `/users/${id}/edit`;
+        f.querySelector('input[name="full_name"]').value = u.full_name;
+        f.querySelector('input[name="position"]').value  = u.position;
+        f.querySelector('input[name="username"]').value  = u.username;
+        f.querySelector('input[name="username"]').readOnly = true;
+        f.querySelector('select[name="role"]').value      = u.role;
+        f.querySelector('input[name="password"]').value = '';
+        f.querySelector('input[name="confirm_password"]').value = '';
         openModal(editUserModal);
       }
     }
-    if(act === 'delete-user'){
+
+    if(action === 'delete-user'){
       if(confirm('Bạn có chắc chắn muốn xóa người dùng này không?')){
         const form = document.createElement('form');
         form.method = 'POST';
@@ -283,35 +218,21 @@
         form.submit();
       }
     }
-    if(act === 'close-modal'){ closeModal(t.closest('.modal')); }
-  });
 
-  // Validate mật khẩu ở modal Thêm/Sửa user
-  (function wireUserForms(){
-    const addForm  = addUserModal?.querySelector('form');
-    const editForm = editUserModal?.querySelector('form');
-
-    function install(form, msgSel){
-      if(!form) return;
-      const pw  = form.querySelector('input[name="password"]');
-      const cf  = form.querySelector('input[name="confirm_password"]');
-      const msg = document.querySelector(msgSel);
-      const check = ()=>{
-        if(!pw || !cf) return true;
-        if(pw.value && cf.value && pw.value !== cf.value){
-          msg?.classList.remove('hidden');
-          pw.classList.add('border-red-500'); cf.classList.add('border-red-500'); return false;
-        }
-        msg?.classList.add('hidden');
-        pw?.classList.remove('border-red-500'); cf?.classList.remove('border-red-500'); return true;
-      };
-      pw?.addEventListener('input', check);
-      cf?.addEventListener('input', check);
-      form.addEventListener('submit', (e)=>{ if(!check()) e.preventDefault(); });
+    if(action === 'delete-doc'){
+      if(confirm('Bạn có chắc chắn muốn xóa tài liệu này không?')){
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/documents/${t.dataset.id}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+      }
     }
-    install(addForm,  '#add-password-mismatch-message');
-    install(editForm, '#edit-password-mismatch-message');
-  })();
+
+    if(action === 'close-modal'){                 // nút X trên modal
+      closeModal(t.closest('.modal'));
+    }
+  });
 </script>
 </body>
 </html>

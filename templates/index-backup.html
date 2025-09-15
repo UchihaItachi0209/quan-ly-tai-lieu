@@ -2,69 +2,97 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+
+{% if profile_mode %}
+<!-- ================== HỒ SƠ ================== -->
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-semibold mb-4">Hồ sơ cá nhân</h1>
+  <form method="POST" enctype="multipart/form-data" class="rounded-lg border bg-white p-6 shadow-sm space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm text-slate-600">Họ và tên</label>
+        <input name="full_name" value="{{ user_profile.full_name }}" class="mt-1 w-full rounded-md border px-3 py-2">
+      </div>
+      <div>
+        <label class="text-sm text-slate-600">Chức vụ</label>
+        <input name="position" value="{{ user_profile.position }}" class="mt-1 w-full rounded-md border px-3 py-2">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+      <div>
+        <label class="text-sm text-slate-600">Ảnh đại diện (tùy chọn)</label>
+        <input type="file" name="avatar" class="mt-1 block w-full text-sm">
+      </div>
+      <div class="flex items-center gap-3">
+        <img src="{{ user_profile.avatar and url_for('serve_upload', filename=user_profile.avatar) or ('https://ui-avatars.com/api/?name=' ~ (user_profile.full_name|urlencode)) }}"
+             class="w-12 h-12 rounded-full border" />
+        <span class="text-sm text-slate-500">Ảnh hiện tại</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm text-slate-600">Mật khẩu mới</label>
+        <input type="password" name="new_password" class="mt-1 w-full rounded-md border px-3 py-2">
+      </div>
+      <div>
+        <label class="text-sm text-slate-600">Xác nhận mật khẩu</label>
+        <input type="password" name="confirm_password" class="mt-1 w-full rounded-md border px-3 py-2">
+      </div>
+    </div>
+
+    <div class="pt-2">
+      <button class="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700">Lưu thay đổi</button>
+    </div>
+  </form>
+</div>
+{% else %}
+
 <style>
   html, body { overflow-x: hidden; }
-  #doc-table-scroll{
-    --row-h:56px; --head-h:52px;
-    max-height:calc(var(--head-h) + 10 * var(--row-h));
-    overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable both-edges;
-  }
+  #doc-table-scroll{ --row-h:56px; --head-h:52px; max-height:calc(var(--head-h) + 10 * var(--row-h)); overflow:auto; scrollbar-gutter:stable both-edges; }
   #doc-table-scroll::-webkit-scrollbar{height:12px;width:12px;}
   #doc-table-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9999px;}
   #doc-table-scroll::-webkit-scrollbar-track{background:#f1f5f9;}
-  .title-2lines{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;line-height:1.25;}
+  .title-2lines{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; line-height:1.25;}
   #doc-table-scroll tbody td{ text-align:center; vertical-align:middle; }
   #doc-table-scroll tbody td:nth-child(2){ text-align:left; }
 </style>
 
-<!-- THỐNG KÊ -->
+<!-- ======= THỐNG KÊ ======= -->
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-  <!-- Tổng số tài liệu -->
   <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
-    <div class="px-5 py-4 bg-blue-50 border-b border-blue-100">
-      <div class="flex items-center gap-3">
-        <span class="icon-pill bg-blue-500/15 text-blue-600"><i data-lucide="file-text" class="w-5 h-5"></i></span>
-        <h3 class="font-semibold text-slate-800">Tổng số tài liệu</h3>
-      </div>
+    <div class="px-5 py-4 bg-blue-50 border-b border-blue-100 flex items-center gap-3">
+      <span class="icon-pill bg-blue-500/15 text-blue-600"><i data-lucide="file-text" class="w-5 h-5"></i></span>
+      <h3 class="font-semibold text-slate-800">Tổng số tài liệu</h3>
     </div>
     <div class="px-5 py-5 text-4xl font-bold text-slate-900">{{ stats.total }}</div>
   </div>
-
-  <!-- Chưa xử lý -->
   <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
-    <div class="px-5 py-4 bg-rose-50 border-b border-rose-100">
-      <div class="flex items-center gap-3">
-        <span class="icon-pill bg-rose-500/15 text-rose-600"><i data-lucide="alert-octagon" class="w-5 h-5"></i></span>
-        <h3 class="font-semibold text-slate-800">Chưa xử lý</h3>
-      </div>
+    <div class="px-5 py-4 bg-rose-50 border-b border-rose-100 flex items-center gap-3">
+      <span class="icon-pill bg-rose-500/15 text-rose-600"><i data-lucide="alert-octagon" class="w-5 h-5"></i></span>
+      <h3 class="font-semibold text-slate-800">Chưa xử lý</h3>
     </div>
-    <div class="px-5 py-5 text-4xl font-bold text-rose-600">{{ stats.unassigned if stats else 0 }}</div>
+    <div class="px-5 py-5 text-4xl font-bold text-rose-600">{{ stats.unassigned }}</div>
   </div>
-
-  <!-- Đang xử lý -->
   <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
-    <div class="px-5 py-4 bg-amber-50 border-b border-amber-100">
-      <div class="flex items-center gap-3">
-        <span class="icon-pill bg-amber-500/15 text-amber-600"><i data-lucide="clock-9" class="w-5 h-5"></i></span>
-        <h3 class="font-semibold text-slate-800">Đang xử lý</h3>
-      </div>
+    <div class="px-5 py-4 bg-amber-50 border-b border-amber-100 flex items-center gap-3">
+      <span class="icon-pill bg-amber-500/15 text-amber-600"><i data-lucide="clock-9" class="w-5 h-5"></i></span>
+      <h3 class="font-semibold text-slate-800">Đang xử lý</h3>
     </div>
-    <div class="px-5 py-5 text-4xl font-bold text-amber-600">{{ stats.processing if stats else 0 }}</div>
+    <div class="px-5 py-5 text-4xl font-bold text-amber-600">{{ stats.processing }}</div>
   </div>
-
-  <!-- Đã xử lý -->
   <div class="rounded-xl border bg-white shadow-sm overflow-hidden">
-    <div class="px-5 py-4 bg-emerald-50 border-b border-emerald-100">
-      <div class="flex items-center gap-3">
-        <span class="icon-pill bg-emerald-500/15 text-emerald-600"><i data-lucide="check-circle-2" class="w-5 h-5"></i></span>
-        <h3 class="font-semibold text-slate-800">Đã xử lý</h3>
-      </div>
+    <div class="px-5 py-4 bg-emerald-50 border-b border-emerald-100 flex items-center gap-3">
+      <span class="icon-pill bg-emerald-500/15 text-emerald-600"><i data-lucide="check-circle-2" class="w-5 h-5"></i></span>
+      <h3 class="font-semibold text-slate-800">Đã xử lý</h3>
     </div>
-    <div class="px-5 py-5 text-4xl font-bold text-emerald-600">{{ stats.completed if stats else 0 }}</div>
+    <div class="px-5 py-5 text-4xl font-bold text-emerald-600">{{ stats.completed }}</div>
   </div>
 </div>
 
-<!-- Danh sách + Bộ lọc -->
+<!-- ======= DANH SÁCH + BỘ LỌC ======= -->
 <div class="rounded-lg border bg-white shadow-sm mt-4">
   <div class="p-6 pb-3 flex items-center justify-between">
     <div>
@@ -77,105 +105,99 @@
     </button>
   </div>
 
-  <!-- Bộ lọc -->
-  <div class="px-6 pb-4">
-    <form id="filter-form" method="GET" action="{{ url_for('dashboard') }}"
-          class="grid gap-3 lg:grid-cols-7 items-end">
-      <!-- Xem N mục -->
-      <div class="flex flex-col">
-        <label class="text-xs text-slate-500 mb-1">Xem</label>
-        <select name="page_size" class="border rounded-md px-3 py-2">
-          {% for n in [5,10,20,50,100] %}
-            <option value="{{n}}" {% if filters.page_size==n %}selected{% endif %}>{{n}}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Hướng -->
-      <div class="flex flex-col">
-        <label class="text-xs text-slate-500 mb-1">Hướng</label>
-        <input type="text" name="country" value="{{ filters.country }}" placeholder="VD: Campuchia"
-               class="border rounded-md px-3 py-2">
-      </div>
-
-      <!-- Trạng thái -->
-      <div class="flex flex-col">
-        <label class="text-xs text-slate-500 mb-1">Trạng thái</label>
-        <select name="status" class="border rounded-md px-3 py-2">
-          <option value=""  {% if not filters.status %}selected{% endif %}>Tất cả</option>
-          <option value="Chưa xử lý" {% if filters.status=='Chưa xử lý' %}selected{% endif %}>Chưa xử lý</option>
-          <option value="Đang xử lý" {% if filters.status=='Đang xử lý' %}selected{% endif %}>Đang xử lý</option>
-          <option value="Đã xử lý"   {% if filters.status=='Đã xử lý'   %}selected{% endif %}>Đã xử lý</option>
-        </select>
-      </div>
-
-      <!-- Tuần -->
-      <div class="flex flex-col">
-        <label class="text-xs text-slate-500 mb-1">Tuần</label>
-        <select name="week" class="border rounded-md px-3 py-2">
-          <option value="" {% if not filters.week %}selected{% endif %}>Tất cả</option>
-          {% for n in range(0,54) %}
-            {% set w = "%02d"|format(n) %}
-            <option value="{{ w }}" {% if filters.week == w %}selected{% endif %}>{{ n }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Năm -->
-      <div class="flex flex-col">
-        <label class="text-xs text-slate-500 mb-1">Năm</label>
-        <input type="number" name="year" value="{{ filters.year }}" placeholder="2025"
-               class="border rounded-md px-3 py-2">
-      </div>
-
-      <!-- Người xử lý -->
-      <div class="flex flex-col">
-        <label class="text-xs text-slate-500 mb-1">Người xử lý</label>
-        <select name="handler_id" class="border rounded-md px-3 py-2">
-          <option value="" {% if not filters.handler_id %}selected{% endif %}>Tất cả</option>
-          <option value="null" {% if filters.handler_id=='null' %}selected{% endif %}>— Chưa giao —</option>
-          {% for u in users %}
-            <option value="{{ u.id }}" {% if (filters.handler_id|string) == (u.id|string) %}selected{% endif %}>{{ u.full_name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Tìm theo Tiêu đề + Nút cùng hàng -->
-      <div class="lg:col-span-2 flex items-end gap-2">
-        <div class="flex-1 flex flex-col">
-          <label class="text-xs text-slate-500 mb-1">Tìm theo Tiêu đề</label>
-          <input type="text" name="q" value="{{ filters.q }}" placeholder="Nhập tiêu đề để tìm..."
-                 class="border rounded-md px-3 py-2">
-        </div>
-        <div class="pb-[2px] flex gap-2">
-          <input type="hidden" name="page" value="{{ page }}">
-          <button class="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700">Lọc/Tìm</button>
-          <a href="{{ url_for('dashboard') }}" class="px-4 py-2 rounded-md border bg-white hover:bg-slate-50">Xóa lọc</a>
-        </div>
-      </div>
-    </form>
+  <!-- Hàng 1: dropdowns -->
+  <div class="px-6 grid gap-3 lg:grid-cols-6 items-end">
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Xem</label>
+      <select name="page_size" form="filter-form" class="border rounded-md px-3 py-2 w-[140px]">
+        {% for n in [5,10,20,50,100] %}
+        <option value="{{n}}" {% if filters.page_size==n %}selected{% endif %}>{{n}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Hướng</label>
+      <input type="text" name="country" form="filter-form" value="{{ filters.country }}" placeholder="VD: Campuchia"
+             class="border rounded-md px-3 py-2 w-[260px]">
+    </div>
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Trạng thái</label>
+      <select name="status" form="filter-form" class="border rounded-md px-3 py-2 w-[180px]">
+        <option value=""  {% if not filters.status %}selected{% endif %}>Tất cả</option>
+        <option value="Chưa xử lý" {% if filters.status=='Chưa xử lý' %}selected{% endif %}>Chưa xử lý</option>
+        <option value="Đang xử lý" {% if filters.status=='Đang xử lý' %}selected{% endif %}>Đang xử lý</option>
+        <option value="Đã xử lý"   {% if filters.status=='Đã xử lý'   %}selected{% endif %}>Đã xử lý</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Tuần</label>
+      <select name="week" form="filter-form" class="border rounded-md px-3 py-2 w-[140px]">
+        <option value="" {% if not filters.week %}selected{% endif %}>Tất cả</option>
+        {% for n in range(0,54) %}
+          {% set w = "%02d"|format(n) %}
+          <option value="{{ w }}" {% if filters.week == w %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Năm</label>
+      <input type="number" name="year" form="filter-form" value="{{ filters.year }}" placeholder="2025"
+             class="border rounded-md px-3 py-2 w-[160px]">
+    </div>
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Người xử lý</label>
+      <select name="handler_id" form="filter-form" class="border rounded-md px-3 py-2 w-[220px]">
+        <option value="" {% if not filters.handler_id %}selected{% endif %}>Tất cả</option>
+        <option value="null" {% if filters.handler_id=='null' %}selected{% endif %}>Chưa giao</option>
+        {% for u in users %}
+          <option value="{{u.id}}" {% if filters.handler_id and filters.handler_id|string == u.id|string %}selected{% endif %}>{{u.full_name}}</option>
+        {% endfor %}
+      </select>
+    </div>
   </div>
 
-  <!-- Bảng -->
+  <!-- Hàng 2: tiêu đề + nút -->
+  <div class="px-6 pb-4 mt-3 flex items-end justify-between">
+    <div>
+      <label class="text-xs text-slate-500 mb-1 block">Tìm theo Tiêu đề</label>
+      <input type="text" name="q" form="filter-form" value="{{ filters.q }}" placeholder="Nhập tiêu đề để tìm..."
+             class="border rounded-md px-3 py-2 w-[260px]">
+    </div>
+    <div class="flex gap-2">
+      <button form="filter-form" class="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700">Lọc/Tìm</button>
+      <a href="{{ url_for('dashboard') }}" class="px-4 py-2 rounded-md border bg-white hover:bg-slate-50">Xóa lọc</a>
+    </div>
+  </div>
+
+  <!-- Form ẩn để submit -->
+  <form id="filter-form" method="GET" action="{{ url_for('dashboard') }}">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="page_size" value="{{ filters.page_size }}">
+    <input type="hidden" name="country" value="{{ filters.country }}">
+    <input type="hidden" name="status" value="{{ filters.status }}">
+    <input type="hidden" name="week" value="{{ filters.week }}">
+    <input type="hidden" name="year" value="{{ filters.year }}">
+    <input type="hidden" name="handler_id" value="{{ filters.handler_id }}">
+    <input type="hidden" name="q" value="{{ filters.q }}">
+  </form>
+
+  <!-- BẢNG -->
   <div class="border-t p-0">
     <div id="doc-table-scroll" class="w-full">
       <table class="w-full text-base min-w-[1400px] table-fixed">
         <thead class="bg-slate-100">
           <tr class="border-b">
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap
-                       w-[64px] border-r sticky left-0 z-30 bg-slate-100">STT</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap
-                       w-[200px] border-r sticky left-[64px] z-20 bg-slate-100">Tiêu đề</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[160px] border-r">Thời gian soạn thảo</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[120px] border-r">Hướng</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[180px] border-r">Người xử lý</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[200px] border-r">Thời gian hoàn thành</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[120px] border-r">Trạng thái</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[130px] border-r">Ghi chú</th>
-            <th class="h-12 px-4 text-center font-semibold text-slate-600 whitespace-nowrap w-[140px]">Hành động</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[64px] border-r sticky left-0 z-30 bg-slate-100">STT</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[200px] border-r sticky left-[64px] z-20 bg-slate-100">Tiêu đề</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[160px] border-r">Thời gian soạn thảo</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[120px] border-r">Hướng</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[180px] border-r">Người xử lý</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[200px] border-r">Thời gian hoàn thành</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[120px] border-r">Trạng thái</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[130px] border-r">Ghi chú</th>
+            <th class="h-12 px-4 text-center font-semibold text-slate-600 w-[140px]">Hành động</th>
           </tr>
         </thead>
-
         <tbody class="divide-y divide-slate-100">
           {% for doc in documents %}
           <tr class="odd:bg-white even:bg-slate-50/50">
@@ -200,9 +222,7 @@
               {% endif %}
             </td>
             <td class="p-4 text-slate-500 text-sm border-r" title="{{ doc.main_content_summary or '' }}">
-              {% if doc.main_content_summary %}
-                <div class="truncate">{{ doc.main_content_summary }}</div>
-              {% else %} — {% endif %}
+              {% if doc.main_content_summary %}<div class="truncate">{{ doc.main_content_summary }}</div>{% else %} — {% endif %}
             </td>
             <td class="p-4">
               <div class="inline-flex rounded-md shadow-sm">
@@ -215,8 +235,7 @@
                    class="px-3 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 border-y border-l border-amber-600">
                   <i data-lucide="pencil" class="w-4 h-4"></i>
                 </a>
-                <form method="POST" action="{{ url_for('delete_document', doc_id=doc.id) }}"
-                      onsubmit="return confirm('Bạn chắc chắn muốn xóa tài liệu này?');">
+                <form method="POST" action="{{ url_for('delete_document', doc_id=doc.id) }}" onsubmit="return confirm('Bạn chắc chắn muốn xóa tài liệu này?');">
                   <button class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-r-lg hover:bg-red-700 border-y border-l border-red-700" type="submit">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                   </button>
@@ -256,15 +275,13 @@
 </div>
 
 <script>
-  lucide.createIcons();
+  // khi đổi page_size => về trang 1
   const form = document.getElementById('filter-form');
-  form.querySelector('select[name="page_size"]').addEventListener('change', () => {
-    form.querySelector('input[name="page"]').value = 1;
-    form.submit();
-  });
-  form.addEventListener('submit', () => {
-    form.querySelector('input[name="page"]').value = 1;
-  });
+  const sizeSel = document.querySelector('select[name="page_size"]');
+  if (sizeSel) sizeSel.addEventListener('change', ()=>{ form.querySelector('input[name="page"]').value=1; form.submit(); });
+  form.addEventListener('submit', ()=>{ form.querySelector('input[name="page"]').value=1; });
 </script>
+
+{% endif %}
 {% endblock %}
 
